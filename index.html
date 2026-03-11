@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Infinite Whiteboard</title>
+    <!-- Inline SVG favicon — no external file needed -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230f172a'/><path d='M8 24 L10 18 L20 8 Q22 6 24 8 Q26 10 24 12 L14 22 Z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/><line x1='18' y1='10' x2='22' y2='14' stroke='white' stroke-width='1.8'/></svg>">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body, html {
@@ -224,6 +226,66 @@
         #cancel-btn:hover  { background: #e2e8f0; }
         #confirm-btn { background: #dc2626; color: white; }
         #confirm-btn:hover { background: #b91c1c; }
+
+        /* Image on canvas — selection handles */
+        .img-selected-ring { outline: 2px dashed #2563eb; }
+
+        /* Toast */
+        #toast {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: #0f172a;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 20px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            white-space: nowrap;
+            z-index: 20;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Image context menu */
+        #img-ctx-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            padding: 6px;
+            z-index: 30;
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 150px;
+        }
+        #img-ctx-menu button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            text-align: left;
+            transition: background 0.1s;
+        }
+        #img-ctx-menu button:hover { background: #f1f5f9; }
+        #img-ctx-menu button.danger { color: #dc2626; }
+        #img-ctx-menu button.danger:hover { background: #fef2f2; }
+        #img-ctx-menu .menu-sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
     </style>
 </head>
 <body>
@@ -232,6 +294,18 @@
 
 <div id="zoom-indicator">100%</div>
 <div id="stylus-badge">✏️ Stylus Mode</div>
+<div id="toast"></div>
+
+<!-- Image right-click context menu -->
+<div id="img-ctx-menu">
+    <button id="ctx-lock">🔒 Lock image</button>
+    <button id="ctx-unlock">🔓 Unlock image</button>
+    <div class="menu-sep"></div>
+    <button id="ctx-front">⬆️ Bring to front</button>
+    <button id="ctx-back">⬇️ Send to back</button>
+    <div class="menu-sep"></div>
+    <button id="ctx-delete" class="danger">🗑 Delete image</button>
+</div>
 
 <!-- Toolbar -->
 <div id="toolbar">
@@ -297,6 +371,18 @@
 const COLORS = ['#0f172a', '#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#db2777'];
 
 // ─────────────────────────────────────────────
+//  Toast helper
+// ─────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, duration = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ─────────────────────────────────────────────
 //  State
 // ─────────────────────────────────────────────
 const ui = {
@@ -311,6 +397,7 @@ const cam = { x: 0, y: 0, z: 1 };
 
 const draw = {
     strokes: [],          // committed strokes [{color, thickness, pts:[{x,y}]}]
+    images: [],           // pasted images [{id, img, x, y, w, h, locked}]
     current: null,        // stroke being drawn right now
     isDrawing: false,
     isErasing: false,
@@ -319,6 +406,9 @@ const draw = {
     lastScreen: null,     // last screen-space pointer pos
     touches: new Map(),   // pointerId → {x,y} (screen)
     lastPinch: null,      // {dist, mid:{x,y}}
+    // image drag state
+    draggingImg: null,    // {imgObj, offX, offY}
+    selectedImg: null,    // currently selected image (for context menu)
 };
 
 // ─────────────────────────────────────────────
@@ -374,6 +464,30 @@ function redraw() {
     ctx.save();
     ctx.scale(cam.z, cam.z);
     ctx.translate(-cam.x, -cam.y);
+
+    // Draw images (below strokes)
+    for (const im of draw.images) {
+        ctx.drawImage(im.img, im.x, im.y, im.w, im.h);
+        // Lock badge
+        if (im.locked) {
+            ctx.save();
+            ctx.font = `${Math.max(12, 14 / cam.z)}px sans-serif`;
+            const badge = '🔒';
+            const bx = im.x + im.w - 22 / cam.z;
+            const by = im.y + 4 / cam.z;
+            ctx.fillText(badge, bx, by + 16 / cam.z);
+            ctx.restore();
+        }
+        // Selection ring
+        if (im === draw.selectedImg) {
+            ctx.save();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2 / cam.z;
+            ctx.setLineDash([6 / cam.z, 3 / cam.z]);
+            ctx.strokeRect(im.x - 2/cam.z, im.y - 2/cam.z, im.w + 4/cam.z, im.h + 4/cam.z);
+            ctx.restore();
+        }
+    }
 
     function drawStroke(s) {
         if (!s || s.pts.length === 0) return;
@@ -463,8 +577,114 @@ function eraseAt(wPrev, wCur) {
 }
 
 // ─────────────────────────────────────────────
-//  Pointer helpers
+//  Image paste support
 // ─────────────────────────────────────────────
+function addImageToCanvas(imgEl) {
+    // Place image centered on current viewport
+    const maxW = canvas.width  * 0.6 / cam.z;
+    const maxH = canvas.height * 0.6 / cam.z;
+    let w = imgEl.naturalWidth,  h = imgEl.naturalHeight;
+    const scale = Math.min(1, maxW / w, maxH / h);
+    w *= scale; h *= scale;
+
+    const cx = cam.x + canvas.width  / (2 * cam.z);
+    const cy = cam.y + canvas.height / (2 * cam.z);
+
+    const imgObj = {
+        id: Date.now() + Math.random(),
+        img: imgEl,
+        x: cx - w / 2,
+        y: cy - h / 2,
+        w, h,
+        locked: false,
+    };
+    draw.images.push(imgObj);
+    draw.selectedImg = imgObj;
+    redraw();
+    showToast('📎 Image pasted — drag to move, right-click for options');
+}
+
+document.addEventListener('paste', e => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const url  = URL.createObjectURL(blob);
+            const img  = new Image();
+            img.onload = () => { URL.revokeObjectURL(url); addImageToCanvas(img); };
+            img.src = url;
+            return;
+        }
+    }
+});
+
+// ─────────────────────────────────────────────
+//  Image hit-test (returns topmost image at world pos, respecting lock for erase only)
+// ─────────────────────────────────────────────
+function imageAtWorld(wx, wy, { ignoreUnlocked = false } = {}) {
+    for (let i = draw.images.length - 1; i >= 0; i--) {
+        const im = draw.images[i];
+        if (ignoreUnlocked && !im.locked) continue;
+        if (wx >= im.x && wx <= im.x + im.w && wy >= im.y && wy <= im.y + im.h) return im;
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────
+//  Image context menu
+// ─────────────────────────────────────────────
+const ctxMenu = document.getElementById('img-ctx-menu');
+
+function showCtxMenu(screenX, screenY, imgObj) {
+    draw.selectedImg = imgObj;
+    document.getElementById('ctx-lock').style.display   = imgObj.locked ? 'none' : 'flex';
+    document.getElementById('ctx-unlock').style.display = imgObj.locked ? 'flex' : 'none';
+    ctxMenu.style.left    = screenX + 'px';
+    ctxMenu.style.top     = screenY + 'px';
+    ctxMenu.style.display = 'flex';
+    redraw();
+}
+function hideCtxMenu() { ctxMenu.style.display = 'none'; }
+
+document.getElementById('ctx-lock').onclick = () => {
+    if (draw.selectedImg) { draw.selectedImg.locked = true; redraw(); showToast('🔒 Image locked — eraser won\'t touch it'); }
+    hideCtxMenu();
+};
+document.getElementById('ctx-unlock').onclick = () => {
+    if (draw.selectedImg) { draw.selectedImg.locked = false; redraw(); showToast('🔓 Image unlocked'); }
+    hideCtxMenu();
+};
+document.getElementById('ctx-front').onclick = () => {
+    if (draw.selectedImg) {
+        draw.images = draw.images.filter(i => i !== draw.selectedImg);
+        draw.images.push(draw.selectedImg);
+        redraw();
+    }
+    hideCtxMenu();
+};
+document.getElementById('ctx-back').onclick = () => {
+    if (draw.selectedImg) {
+        draw.images = draw.images.filter(i => i !== draw.selectedImg);
+        draw.images.unshift(draw.selectedImg);
+        redraw();
+    }
+    hideCtxMenu();
+};
+document.getElementById('ctx-delete').onclick = () => {
+    if (draw.selectedImg) {
+        draw.images = draw.images.filter(i => i !== draw.selectedImg);
+        draw.selectedImg = null;
+        redraw();
+    }
+    hideCtxMenu();
+};
+
+// Close ctx menu on outside click
+document.addEventListener('pointerdown', e => {
+    if (!ctxMenu.contains(e.target)) hideCtxMenu();
+}, true);
 function getScreenPos(e) {
     const r = canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -494,22 +714,50 @@ canvas.addEventListener('pointerdown', e => {
         updateUI();
     }
 
+    // Right-click on canvas → check for image context menu
+    if (e.button === 2) {
+        const wPos = screenToWorld(sc.x, sc.y);
+        const hit  = imageAtWorld(wPos.x, wPos.y);
+        if (hit) {
+            showCtxMenu(sc.x, sc.y, hit);
+        } else {
+            hideCtxMenu();
+            draw.selectedImg = null;
+            redraw();
+        }
+        return;
+    }
+
     // Track touch points for pinch
     if (e.pointerType === 'touch') {
         draw.touches.set(e.pointerId, sc);
         if (draw.touches.size >= 2) {
-            // Start pinch — cancel any drawing
             draw.isDrawing = false;
             draw.isErasing = false;
             draw.current = null;
             draw.isPanning = true;
             draw.lastPinch = null;
+            draw.draggingImg = null;
             return;
         }
     }
 
     const tool = activeTool(e);
     const wPos = screenToWorld(sc.x, sc.y);
+
+    // Check for image drag (pen tool, pointer on an image)
+    if (tool === 'pen' || tool === 'pan') {
+        const hit = imageAtWorld(wPos.x, wPos.y);
+        if (hit) {
+            draw.draggingImg = { imgObj: hit, offX: wPos.x - hit.x, offY: wPos.y - hit.y };
+            draw.selectedImg = hit;
+            redraw();
+            return;
+        }
+    }
+
+    // Deselect image on canvas click (not on an image)
+    if (draw.selectedImg) { draw.selectedImg = null; redraw(); }
 
     if (tool === 'pen') {
         draw.isDrawing = true;
@@ -552,6 +800,14 @@ canvas.addEventListener('pointermove', e => {
         }
     }
 
+    if (draw.draggingImg) {
+        const wPos = screenToWorld(sc.x, sc.y);
+        draw.draggingImg.imgObj.x = wPos.x - draw.draggingImg.offX;
+        draw.draggingImg.imgObj.y = wPos.y - draw.draggingImg.offY;
+        redraw();
+        return;
+    }
+
     if (draw.isDrawing && draw.current) {
         const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
         for (const ev of events) {
@@ -585,12 +841,13 @@ function handleUp(e) {
                 draw.strokes.push(draw.current);
             }
         }
-        draw.isDrawing  = false;
-        draw.isErasing  = false;
-        draw.isPanning  = false;
-        draw.current    = null;
-        draw.lastWorld  = null;
-        draw.lastScreen = null;
+        draw.isDrawing   = false;
+        draw.isErasing   = false;
+        draw.isPanning   = false;
+        draw.draggingImg = null;
+        draw.current     = null;
+        draw.lastWorld   = null;
+        draw.lastScreen  = null;
         redraw();
     }
 }
@@ -699,7 +956,9 @@ document.getElementById('clear-btn').onclick    = () => document.getElementById(
 document.getElementById('cancel-btn').onclick   = () => document.getElementById('modal-overlay').classList.remove('visible');
 document.getElementById('confirm-btn').onclick  = () => {
     draw.strokes = [];
+    draw.images  = [];
     draw.current = null;
+    draw.selectedImg = null;
     document.getElementById('modal-overlay').classList.remove('visible');
     redraw();
 };
