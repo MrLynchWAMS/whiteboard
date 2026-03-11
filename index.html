@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Infinite Whiteboard</title>
-    <!-- Inline SVG favicon — no external file needed -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230f172a'/><path d='M8 24 L10 18 L20 8 Q22 6 24 8 Q26 10 24 12 L14 22 Z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/><line x1='18' y1='10' x2='22' y2='14' stroke='white' stroke-width='1.8'/></svg>">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,14 +15,9 @@
             -webkit-user-select: none;
         }
 
-        #canvas {
-            position: absolute;
-            inset: 0;
-            display: block;
-            touch-action: none;
-        }
+        #canvas { position: absolute; inset: 0; display: block; touch-action: none; }
 
-        /* ---- Toolbar ---- */
+        /* ── Toolbar ── */
         #toolbar {
             position: absolute;
             bottom: 20px;
@@ -39,248 +33,151 @@
             padding: 8px 12px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
             z-index: 10;
+            flex-wrap: wrap;
+            max-width: calc(100vw - 24px);
         }
 
         .tool-group {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: #f1f5f9;
-            border-radius: 12px;
-            padding: 4px;
+            display: flex; align-items: center; gap: 4px;
+            background: #f1f5f9; border-radius: 12px; padding: 4px;
         }
 
         .tool-btn {
-            width: 38px;
-            height: 38px;
-            border: none;
-            border-radius: 9px;
-            background: transparent;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            transition: all 0.15s ease;
-            flex-shrink: 0;
+            width: 38px; height: 38px;
+            border: none; border-radius: 9px;
+            background: transparent; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #64748b; transition: all 0.15s ease; flex-shrink: 0;
         }
         .tool-btn:hover { background: rgba(0,0,0,0.06); color: #1e293b; }
-        .tool-btn.active {
-            background: white;
-            color: #0f172a;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-        }
+        .tool-btn.active { background: white; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
         .tool-btn svg { width: 18px; height: 18px; stroke-width: 2; pointer-events: none; }
         .tool-btn.active svg { stroke-width: 2.5; }
+        .tool-btn:disabled { opacity: 0.3; cursor: default; }
+        .tool-btn:disabled:hover { background: transparent; color: #64748b; }
 
-        .divider {
-            width: 1px;
-            height: 28px;
-            background: #cbd5e1;
-            margin: 0 4px;
-            flex-shrink: 0;
-        }
+        .divider { width: 1px; height: 28px; background: #cbd5e1; margin: 0 4px; flex-shrink: 0; }
 
-        /* Color swatches */
-        #colors-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+        /* Colors */
+        #colors-row { display: flex; align-items: center; gap: 5px; }
         .color-swatch {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: transform 0.15s, border-color 0.15s;
-            flex-shrink: 0;
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 2px solid transparent; cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s; flex-shrink: 0;
         }
         .color-swatch:hover { transform: scale(1.15); }
-        .color-swatch.active {
-            transform: scale(1.2);
-            border-color: white;
-            box-shadow: 0 0 0 2px #94a3b8;
-        }
+        .color-swatch.active { transform: scale(1.2); border-color: white; box-shadow: 0 0 0 2px #94a3b8; }
 
         /* Thickness */
-        #thickness-wrap {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 0 4px;
-        }
+        #thickness-wrap { display: flex; align-items: center; gap: 6px; padding: 0 4px; }
         #thickness-wrap svg { color: #94a3b8; flex-shrink: 0; }
-        #thickness-slider {
-            width: 80px;
-            accent-color: #334155;
-            cursor: pointer;
-        }
+        #thickness-slider { width: 80px; accent-color: #334155; cursor: pointer; }
 
-        /* Erase mode toggle */
+        /* Erase mode */
         #erase-mode-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border: none;
-            border-radius: 10px;
-            background: transparent;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            color: #475569;
-            white-space: nowrap;
-            transition: background 0.15s;
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border: none; border-radius: 10px;
+            background: transparent; cursor: pointer;
+            font-size: 12px; font-weight: 500; color: #475569;
+            white-space: nowrap; transition: background 0.15s;
         }
         #erase-mode-btn:hover { background: #f1f5f9; }
         #erase-mode-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
         /* Clear btn */
         #clear-btn {
-            width: 38px;
-            height: 38px;
-            border: none;
-            border-radius: 10px;
-            background: transparent;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #dc2626;
-            transition: background 0.15s, transform 0.15s;
+            width: 38px; height: 38px; border: none; border-radius: 10px;
+            background: transparent; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #dc2626; transition: background 0.15s, transform 0.15s;
         }
         #clear-btn:hover { background: #fef2f2; transform: scale(1.05); }
         #clear-btn svg { width: 18px; height: 18px; }
 
-        /* Stylus indicator badge */
+        /* Stylus badge */
         #stylus-badge {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: #0f172a;
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: none;
-            z-index: 10;
-            opacity: 0.7;
+            position: absolute; top: 16px; right: 16px;
+            background: #0f172a; color: white;
+            font-size: 11px; font-weight: 600;
+            padding: 4px 10px; border-radius: 20px;
+            display: none; z-index: 10; opacity: 0.7;
         }
 
-        /* Zoom indicator */
+        /* Zoom */
         #zoom-indicator {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            background: rgba(255,255,255,0.9);
-            border: 1px solid #e2e8f0;
-            color: #475569;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            z-index: 10;
-            pointer-events: none;
+            position: absolute; top: 16px; left: 16px;
+            background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
+            color: #475569; font-size: 12px; font-weight: 600;
+            padding: 4px 10px; border-radius: 20px; z-index: 10; pointer-events: none;
         }
 
         /* Modal */
         #modal-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(15,23,42,0.45);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
+            position: absolute; inset: 0;
+            background: rgba(15,23,42,0.45); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 50;
         }
         #modal-overlay.visible { display: flex; }
         #modal-box {
-            background: white;
-            border-radius: 20px;
-            padding: 28px;
-            max-width: 340px;
-            width: 90%;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.2);
-            animation: popIn 0.2s ease;
+            background: white; border-radius: 20px; padding: 28px;
+            max-width: 340px; width: 90%;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.2); animation: popIn 0.2s ease;
         }
-        @keyframes popIn {
-            from { transform: scale(0.92); opacity: 0; }
-            to   { transform: scale(1);    opacity: 1; }
-        }
+        @keyframes popIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #modal-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
         #modal-box p  { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 24px; }
-        .modal-btns   { display: flex; justify-content: flex-end; gap: 10px; }
-        .modal-btns button {
-            padding: 9px 18px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: background 0.15s;
-        }
+        .modal-btns { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btns button { padding: 9px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
         #cancel-btn  { background: #f1f5f9; color: #475569; }
         #cancel-btn:hover  { background: #e2e8f0; }
         #confirm-btn { background: #dc2626; color: white; }
         #confirm-btn:hover { background: #b91c1c; }
 
-        /* Image on canvas — selection handles */
-        .img-selected-ring { outline: 2px dashed #2563eb; }
-
         /* Toast */
         #toast {
-            position: absolute;
-            bottom: 90px;
-            left: 50%;
+            position: absolute; bottom: 90px; left: 50%;
             transform: translateX(-50%) translateY(10px);
-            background: #0f172a;
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 20px;
-            pointer-events: none;
-            opacity: 0;
+            background: #0f172a; color: white;
+            font-size: 12px; font-weight: 500;
+            padding: 8px 16px; border-radius: 20px;
+            pointer-events: none; opacity: 0;
             transition: opacity 0.2s, transform 0.2s;
-            white-space: nowrap;
-            z-index: 20;
+            white-space: nowrap; z-index: 20;
         }
-        #toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* Press-and-hold ring */
+        #hold-ring {
+            position: absolute;
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 3px solid #2563eb;
+            pointer-events: none; z-index: 25;
+            display: none;
+            transform: translate(-50%, -50%) scale(0.3);
+            opacity: 0;
+            transition: transform 0.65s ease-out, opacity 0.1s;
+        }
+        #hold-ring.active {
+            display: block;
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.9;
         }
 
-        /* Image context menu */
+        /* Context menu */
         #img-ctx-menu {
             position: absolute;
-            background: white;
-            border: 1px solid #e2e8f0;
+            background: white; border: 1px solid #e2e8f0;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            padding: 6px;
-            z-index: 30;
-            display: none;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 150px;
+            padding: 6px; z-index: 30;
+            display: none; flex-direction: column; gap: 2px; min-width: 165px;
         }
         #img-ctx-menu button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            border: none;
-            border-radius: 8px;
-            background: transparent;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            color: #374151;
-            text-align: left;
-            transition: background 0.1s;
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; border: none; border-radius: 8px;
+            background: transparent; cursor: pointer;
+            font-size: 13px; font-weight: 500; color: #374151;
+            text-align: left; transition: background 0.1s; width: 100%;
         }
         #img-ctx-menu button:hover { background: #f1f5f9; }
         #img-ctx-menu button.danger { color: #dc2626; }
@@ -291,12 +188,12 @@
 <body>
 
 <canvas id="canvas"></canvas>
-
 <div id="zoom-indicator">100%</div>
 <div id="stylus-badge">✏️ Stylus Mode</div>
 <div id="toast"></div>
+<div id="hold-ring"></div>
 
-<!-- Image right-click context menu -->
+<!-- Image context menu -->
 <div id="img-ctx-menu">
     <button id="ctx-lock">🔒 Lock image</button>
     <button id="ctx-unlock">🔓 Unlock image</button>
@@ -309,28 +206,38 @@
 
 <!-- Toolbar -->
 <div id="toolbar">
-    <!-- Tool group -->
     <div class="tool-group">
-        <button class="tool-btn active" id="btn-pen" title="Pen (P)">
+        <button class="tool-btn active" id="btn-pen" title="Pen — draws on top of everything (P)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
         </button>
-        <button class="tool-btn" id="btn-eraser" title="Eraser (E)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6.0001 13.5L10.5 18"/></svg>
+        <button class="tool-btn" id="btn-eraser" title="Eraser — erases strokes (and unlocked images) (E)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6 13.5L10.5 18"/></svg>
         </button>
-        <button class="tool-btn" id="btn-pan" title="Pan (Space/H)">
+        <button class="tool-btn" id="btn-select" title="Select — move / right-click images (S)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l14 9-7 2-4 7z"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-pan" title="Pan — scroll canvas (H or Space)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5a2 2 0 00-2-2 2 2 0 00-2 2v7a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2 2 2 0 00-2 2"/></svg>
         </button>
     </div>
 
     <div class="divider"></div>
 
-    <!-- Colors (hidden when eraser/pan active) -->
-    <div id="colors-row">
-        <!-- injected by JS -->
+    <!-- Undo / Redo -->
+    <div class="tool-group">
+        <button class="tool-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-redo" title="Redo (Ctrl+Y)" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13"/></svg>
+        </button>
     </div>
+
+    <div class="divider"></div>
+
+    <div id="colors-row"></div>
     <div class="divider" id="color-divider"></div>
 
-    <!-- Thickness -->
     <div id="thickness-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.5"/></svg>
         <input type="range" id="thickness-slider" min="1" max="40" value="4" title="Stroke thickness">
@@ -339,7 +246,6 @@
 
     <div class="divider"></div>
 
-    <!-- Erase mode -->
     <button id="erase-mode-btn" title="Toggle erase mode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
         <span id="erase-label">Whole Stroke</span>
@@ -356,7 +262,7 @@
 <div id="modal-overlay">
     <div id="modal-box">
         <h2>🗑️ Clear Board?</h2>
-        <p>This will permanently erase all strokes on the canvas. This cannot be undone.</p>
+        <p>This will permanently erase all strokes and pasted images on the canvas. This action cannot be undone.</p>
         <div class="modal-btns">
             <button id="cancel-btn">Cancel</button>
             <button id="confirm-btn">Yes, Clear All</button>
@@ -365,28 +271,29 @@
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-//  Constants
-// ─────────────────────────────────────────────
-const COLORS = ['#0f172a', '#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#db2777'];
+// ═══════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════
+const COLORS = ['#0f172a','#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#db2777'];
+const MAX_HISTORY = 80;
 
-// ─────────────────────────────────────────────
-//  Toast helper
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
 let _toastTimer;
-function showToast(msg, duration = 2200) {
+function showToast(msg, ms = 2600) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+    _toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
-// ─────────────────────────────────────────────
-//  State
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
 const ui = {
-    tool: 'pen',         // 'pen' | 'eraser' | 'pan'
+    tool: 'pen',         // 'pen' | 'eraser' | 'select' | 'pan'
     eraseMode: 'stroke', // 'stroke' | 'partial'
     color: COLORS[0],
     thickness: 4,
@@ -395,213 +302,241 @@ const ui = {
 
 const cam = { x: 0, y: 0, z: 1 };
 
-const draw = {
-    strokes: [],          // committed strokes [{color, thickness, pts:[{x,y}]}]
-    images: [],           // pasted images [{id, img, x, y, w, h, locked}]
-    current: null,        // stroke being drawn right now
-    isDrawing: false,
-    isErasing: false,
-    isPanning: false,
-    lastWorld: null,      // last world-space pointer pos
-    lastScreen: null,     // last screen-space pointer pos
-    touches: new Map(),   // pointerId → {x,y} (screen)
-    lastPinch: null,      // {dist, mid:{x,y}}
-    // image drag state
-    draggingImg: null,    // {imgObj, offX, offY}
-    selectedImg: null,    // currently selected image (for context menu)
+// Board = undoable content
+const board = {
+    strokes: [],  // [{color, thickness, pts:[{x,y}]}]
+    images:  [],  // [{id, img, x, y, w, h, locked}]
 };
 
-// ─────────────────────────────────────────────
-//  Canvas setup
-// ─────────────────────────────────────────────
-const canvas = document.getElementById('canvas');
-const ctx    = canvas.getContext('2d', { alpha: false });
+// ── History ──
+const hist = { stack: [], idx: -1 };
 
-function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    redraw();
-}
-window.addEventListener('resize', resize);
-
-// ─────────────────────────────────────────────
-//  Coordinate helpers
-// ─────────────────────────────────────────────
-function toWorld(sx, sy) {
-    return { x: sx / cam.z + cam.x, y: sy / cam.y + cam.y };
-}
-// Correct world transform (y uses cam.y not cam.y in denominator)
-function screenToWorld(sx, sy) {
+function snapBoard() {
     return {
-        x: sx / cam.z + cam.x,
-        y: sy / cam.z + cam.y,
+        strokes: board.strokes.map(s => ({ ...s, pts: s.pts.slice() })),
+        images:  board.images.map(im => ({ ...im })),
     };
 }
 
-// ─────────────────────────────────────────────
-//  Rendering
-// ─────────────────────────────────────────────
+function pushHist() {
+    hist.stack.splice(hist.idx + 1);
+    hist.stack.push(snapBoard());
+    if (hist.stack.length > MAX_HISTORY) hist.stack.shift();
+    hist.idx = hist.stack.length - 1;
+    updateUndoBtns();
+}
+
+function applySnap(snap) {
+    board.strokes = snap.strokes.map(s => ({ ...s, pts: s.pts.slice() }));
+    board.images  = snap.images.map(im => ({ ...im }));
+    draw.selectedImg = null;
+    redraw();
+}
+
+function undo() {
+    if (hist.idx <= 0) return;
+    hist.idx--;
+    applySnap(hist.stack[hist.idx]);
+    updateUndoBtns();
+}
+
+function redo() {
+    if (hist.idx >= hist.stack.length - 1) return;
+    hist.idx++;
+    applySnap(hist.stack[hist.idx]);
+    updateUndoBtns();
+}
+
+function updateUndoBtns() {
+    document.getElementById('btn-undo').disabled = hist.idx <= 0;
+    document.getElementById('btn-redo').disabled = hist.idx >= hist.stack.length - 1;
+}
+
+// ── Live interaction state (not snapshotted mid-gesture) ──
+const draw = {
+    current:      null,   // stroke being drawn
+    isDrawing:    false,
+    isErasing:    false,
+    erasedSomething: false,
+    isPanning:    false,
+    lastWorld:    null,
+    lastScreen:   null,
+    touches:      new Map(),
+    lastPinch:    null,
+    selectedImg:  null,
+    draggingImg:  null,   // {imgObj, offX, offY} — select tool only
+    imgMoved:     false,  // did we actually move the image this drag?
+    _prevTool:    null,
+};
+
+// ═══════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d', { alpha: false });
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; redraw(); }
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════
+//  COORDINATES
+// ═══════════════════════════════════════════════
+function screenToWorld(sx, sy) {
+    return { x: sx / cam.z + cam.x, y: sy / cam.z + cam.y };
+}
+function getScreenPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+// ═══════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════
 function redraw() {
     const W = canvas.width, H = canvas.height;
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, W, H);
 
-    // subtle dot grid
-    ctx.save();
+    // dot grid
     const gs = 32 * cam.z;
-    const ox = (-cam.x * cam.z) % gs;
-    const oy = (-cam.y * cam.z) % gs;
+    const ox = ((-cam.x * cam.z) % gs + gs) % gs;
+    const oy = ((-cam.y * cam.z) % gs + gs) % gs;
     ctx.fillStyle = '#cbd5e1';
-    for (let gx = ox; gx < W + gs; gx += gs) {
-        for (let gy = oy; gy < H + gs; gy += gs) {
-            ctx.beginPath();
-            ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
-            ctx.fill();
+    for (let gx = ox - gs; gx < W + gs; gx += gs)
+        for (let gy = oy - gs; gy < H + gs; gy += gs) {
+            ctx.beginPath(); ctx.arc(gx, gy, 0.8, 0, Math.PI*2); ctx.fill();
         }
-    }
-    ctx.restore();
 
     ctx.save();
     ctx.scale(cam.z, cam.z);
     ctx.translate(-cam.x, -cam.y);
 
-    // Draw images (below strokes)
-    for (const im of draw.images) {
+    // Images (below strokes)
+    for (const im of board.images) {
         ctx.drawImage(im.img, im.x, im.y, im.w, im.h);
-        // Lock badge
+
+        // lock badge in corner
+        const sz = Math.max(10, 14 / cam.z);
         if (im.locked) {
-            ctx.save();
-            ctx.font = `${Math.max(12, 14 / cam.z)}px sans-serif`;
-            const badge = '🔒';
-            const bx = im.x + im.w - 22 / cam.z;
-            const by = im.y + 4 / cam.z;
-            ctx.fillText(badge, bx, by + 16 / cam.z);
-            ctx.restore();
+            ctx.font = `${sz}px sans-serif`;
+            ctx.fillText('🔒', im.x + im.w - sz * 1.5, im.y + sz * 1.3);
         }
-        // Selection ring
+
+        // selection outline
         if (im === draw.selectedImg) {
             ctx.save();
             ctx.strokeStyle = '#2563eb';
             ctx.lineWidth = 2 / cam.z;
-            ctx.setLineDash([6 / cam.z, 3 / cam.z]);
-            ctx.strokeRect(im.x - 2/cam.z, im.y - 2/cam.z, im.w + 4/cam.z, im.h + 4/cam.z);
+            ctx.setLineDash([6/cam.z, 3/cam.z]);
+            ctx.strokeRect(im.x - 3/cam.z, im.y - 3/cam.z, im.w + 6/cam.z, im.h + 6/cam.z);
             ctx.restore();
         }
     }
 
+    // Strokes
     function drawStroke(s) {
         if (!s || s.pts.length === 0) return;
         ctx.beginPath();
         ctx.strokeStyle = s.color;
         ctx.lineWidth   = s.thickness;
-        ctx.lineCap     = 'round';
-        ctx.lineJoin    = 'round';
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         if (s.pts.length === 1) {
-            // dot
-            ctx.arc(s.pts[0].x, s.pts[0].y, s.thickness / 2, 0, Math.PI * 2);
             ctx.fillStyle = s.color;
+            ctx.arc(s.pts[0].x, s.pts[0].y, s.thickness/2, 0, Math.PI*2);
             ctx.fill();
             return;
         }
         ctx.moveTo(s.pts[0].x, s.pts[0].y);
-        // smooth with quadratic curves
         for (let i = 1; i < s.pts.length - 1; i++) {
             const mx = (s.pts[i].x + s.pts[i+1].x) / 2;
             const my = (s.pts[i].y + s.pts[i+1].y) / 2;
             ctx.quadraticCurveTo(s.pts[i].x, s.pts[i].y, mx, my);
         }
-        const last = s.pts[s.pts.length - 1];
+        const last = s.pts[s.pts.length-1];
         ctx.lineTo(last.x, last.y);
         ctx.stroke();
     }
 
-    draw.strokes.forEach(drawStroke);
+    board.strokes.forEach(drawStroke);
     if (draw.current) drawStroke(draw.current);
 
     ctx.restore();
-
-    // zoom label
     document.getElementById('zoom-indicator').textContent = Math.round(cam.z * 100) + '%';
 }
 
-// ─────────────────────────────────────────────
-//  Eraser
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  ERASER
+// ═══════════════════════════════════════════════
 function distPtSegSq(p, a, b) {
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const l2 = dx*dx + dy*dy;
-    if (l2 === 0) return (p.x-a.x)**2 + (p.y-a.y)**2;
-    const t = Math.max(0, Math.min(1, ((p.x-a.x)*dx + (p.y-a.y)*dy) / l2));
-    return (p.x - (a.x + t*dx))**2 + (p.y - (a.y + t*dy))**2;
+    const dx = b.x-a.x, dy = b.y-a.y, l2 = dx*dx+dy*dy;
+    if (l2 === 0) return (p.x-a.x)**2+(p.y-a.y)**2;
+    const t = Math.max(0, Math.min(1, ((p.x-a.x)*dx+(p.y-a.y)*dy)/l2));
+    return (p.x-(a.x+t*dx))**2+(p.y-(a.y+t*dy))**2;
 }
 
 function eraseAt(wPrev, wCur) {
-    const R = (Math.max(ui.thickness, 8) * 3) / cam.z;
-    const R2 = R * R;
+    const R2 = ((Math.max(ui.thickness, 8) * 3) / cam.z) ** 2;
     let changed = false;
 
     if (ui.eraseMode === 'stroke') {
-        const before = draw.strokes.length;
-        draw.strokes = draw.strokes.filter(s => {
-            for (let i = 0; i < s.pts.length; i++) {
-                const pt = s.pts[i];
-                if (distPtSegSq(pt, wPrev, wCur) < R2) return false;
-            }
+        const before = board.strokes.length;
+        board.strokes = board.strokes.filter(s => {
+            for (const pt of s.pts) if (distPtSegSq(pt, wPrev, wCur) < R2) return false;
             return true;
         });
-        if (draw.strokes.length !== before) changed = true;
+        if (board.strokes.length !== before) changed = true;
     } else {
-        // partial
         const next = [];
-        for (const s of draw.strokes) {
-            let seg = [];
-            let mod = false;
+        for (const s of board.strokes) {
+            let seg = [], mod = false;
             for (const pt of s.pts) {
                 if (distPtSegSq(pt, wPrev, wCur) < R2) {
                     mod = true;
-                    if (seg.length > 1) next.push({ ...s, pts: seg });
+                    if (seg.length > 1) next.push({...s, pts: seg});
                     seg = [];
-                } else {
-                    seg.push(pt);
-                }
+                } else seg.push(pt);
             }
             if (seg.length > 0) {
-                if (mod) { if (seg.length > 1) next.push({ ...s, pts: seg }); }
+                if (mod) { if (seg.length > 1) next.push({...s, pts: seg}); }
                 else next.push(s);
             }
             if (mod) changed = true;
         }
-        draw.strokes = next;
+        board.strokes = next;
     }
-    if (changed) redraw();
+    if (changed) { redraw(); return true; }
+    return false;
 }
 
-// ─────────────────────────────────────────────
-//  Image paste support
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  IMAGE HELPERS
+// ═══════════════════════════════════════════════
+// Returns topmost image at world position.
+// When erasing: skip locked images.
+// When selecting: return topmost regardless.
+function imageAtWorld(wx, wy, { forErase = false } = {}) {
+    for (let i = board.images.length - 1; i >= 0; i--) {
+        const im = board.images[i];
+        if (forErase && im.locked) continue;
+        if (wx >= im.x && wx <= im.x+im.w && wy >= im.y && wy <= im.y+im.h) return im;
+    }
+    return null;
+}
+
 function addImageToCanvas(imgEl) {
-    // Place image centered on current viewport
     const maxW = canvas.width  * 0.6 / cam.z;
     const maxH = canvas.height * 0.6 / cam.z;
-    let w = imgEl.naturalWidth,  h = imgEl.naturalHeight;
-    const scale = Math.min(1, maxW / w, maxH / h);
-    w *= scale; h *= scale;
-
-    const cx = cam.x + canvas.width  / (2 * cam.z);
-    const cy = cam.y + canvas.height / (2 * cam.z);
-
-    const imgObj = {
-        id: Date.now() + Math.random(),
-        img: imgEl,
-        x: cx - w / 2,
-        y: cy - h / 2,
-        w, h,
-        locked: false,
-    };
-    draw.images.push(imgObj);
+    let w = imgEl.naturalWidth, h = imgEl.naturalHeight;
+    const s = Math.min(1, maxW/w, maxH/h);
+    w *= s; h *= s;
+    const cx = cam.x + canvas.width  / (2*cam.z);
+    const cy = cam.y + canvas.height / (2*cam.z);
+    const imgObj = { id: Date.now()+Math.random(), img: imgEl, x: cx-w/2, y: cy-h/2, w, h, locked: false };
+    board.images.push(imgObj);
     draw.selectedImg = imgObj;
+    pushHist();
     redraw();
-    showToast('📎 Image pasted — drag to move, right-click for options');
+    showToast('📎 Image pasted — use Select tool (S) to move; right-click or hold to lock/unlock');
 }
 
 document.addEventListener('paste', e => {
@@ -610,9 +545,8 @@ document.addEventListener('paste', e => {
     for (const item of items) {
         if (item.type.startsWith('image/')) {
             e.preventDefault();
-            const blob = item.getAsFile();
-            const url  = URL.createObjectURL(blob);
-            const img  = new Image();
+            const url = URL.createObjectURL(item.getAsFile());
+            const img = new Image();
             img.onload = () => { URL.revokeObjectURL(url); addImageToCanvas(img); };
             img.src = url;
             return;
@@ -620,88 +554,118 @@ document.addEventListener('paste', e => {
     }
 });
 
-// ─────────────────────────────────────────────
-//  Image hit-test (returns topmost image at world pos, respecting lock for erase only)
-// ─────────────────────────────────────────────
-function imageAtWorld(wx, wy, { ignoreUnlocked = false } = {}) {
-    for (let i = draw.images.length - 1; i >= 0; i--) {
-        const im = draw.images[i];
-        if (ignoreUnlocked && !im.locked) continue;
-        if (wx >= im.x && wx <= im.x + im.w && wy >= im.y && wy <= im.y + im.h) return im;
-    }
-    return null;
-}
-
-// ─────────────────────────────────────────────
-//  Image context menu
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  CONTEXT MENU
+// ═══════════════════════════════════════════════
 const ctxMenu = document.getElementById('img-ctx-menu');
 
-function showCtxMenu(screenX, screenY, imgObj) {
+function showCtxMenu(sx, sy, imgObj) {
     draw.selectedImg = imgObj;
     document.getElementById('ctx-lock').style.display   = imgObj.locked ? 'none' : 'flex';
     document.getElementById('ctx-unlock').style.display = imgObj.locked ? 'flex' : 'none';
-    ctxMenu.style.left    = screenX + 'px';
-    ctxMenu.style.top     = screenY + 'px';
     ctxMenu.style.display = 'flex';
+    // Force layout so offsetWidth is accurate
+    const mw = ctxMenu.offsetWidth || 165;
+    const mh = ctxMenu.offsetHeight || 180;
+    ctxMenu.style.left = Math.min(sx, window.innerWidth  - mw - 8) + 'px';
+    ctxMenu.style.top  = Math.min(sy, window.innerHeight - mh - 8) + 'px';
     redraw();
 }
 function hideCtxMenu() { ctxMenu.style.display = 'none'; }
 
 document.getElementById('ctx-lock').onclick = () => {
-    if (draw.selectedImg) { draw.selectedImg.locked = true; redraw(); showToast('🔒 Image locked — eraser won\'t touch it'); }
+    if (draw.selectedImg) {
+        draw.selectedImg.locked = true;
+        pushHist(); redraw();
+        showToast('🔒 Locked — eraser will skip this image');
+    }
     hideCtxMenu();
 };
 document.getElementById('ctx-unlock').onclick = () => {
-    if (draw.selectedImg) { draw.selectedImg.locked = false; redraw(); showToast('🔓 Image unlocked'); }
+    if (draw.selectedImg) {
+        draw.selectedImg.locked = false;
+        pushHist(); redraw();
+        showToast('🔓 Unlocked — eraser can erase over this image');
+    }
     hideCtxMenu();
 };
 document.getElementById('ctx-front').onclick = () => {
     if (draw.selectedImg) {
-        draw.images = draw.images.filter(i => i !== draw.selectedImg);
-        draw.images.push(draw.selectedImg);
-        redraw();
+        board.images = board.images.filter(i => i !== draw.selectedImg);
+        board.images.push(draw.selectedImg);
+        pushHist(); redraw();
     }
     hideCtxMenu();
 };
 document.getElementById('ctx-back').onclick = () => {
     if (draw.selectedImg) {
-        draw.images = draw.images.filter(i => i !== draw.selectedImg);
-        draw.images.unshift(draw.selectedImg);
-        redraw();
+        board.images = board.images.filter(i => i !== draw.selectedImg);
+        board.images.unshift(draw.selectedImg);
+        pushHist(); redraw();
     }
     hideCtxMenu();
 };
 document.getElementById('ctx-delete').onclick = () => {
     if (draw.selectedImg) {
-        draw.images = draw.images.filter(i => i !== draw.selectedImg);
+        board.images = board.images.filter(i => i !== draw.selectedImg);
         draw.selectedImg = null;
-        redraw();
+        pushHist(); redraw();
     }
     hideCtxMenu();
 };
 
-// Close ctx menu on outside click
+// Close on outside tap/click
 document.addEventListener('pointerdown', e => {
     if (!ctxMenu.contains(e.target)) hideCtxMenu();
 }, true);
-function getScreenPos(e) {
-    const r = canvas.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+
+// ═══════════════════════════════════════════════
+//  PRESS-AND-HOLD (touch context menu)
+// ═══════════════════════════════════════════════
+const holdRing = document.getElementById('hold-ring');
+let _holdTimer   = null;
+let _holdFired   = false;
+let _holdPointerId = null;
+
+function startHold(sc, wPos, pointerId) {
+    cancelHold();
+    _holdFired = false;
+    _holdPointerId = pointerId;
+    holdRing.style.left = sc.x + 'px';
+    holdRing.style.top  = sc.y + 'px';
+    // Trigger CSS transition by toggling class after a tick
+    requestAnimationFrame(() => { holdRing.className = 'active'; });
+    _holdTimer = setTimeout(() => {
+        _holdFired = true;
+        holdRing.className = '';
+        const hit = imageAtWorld(wPos.x, wPos.y);
+        if (hit) showCtxMenu(sc.x, sc.y, hit);
+    }, 650);
 }
 
+function cancelHold() {
+    clearTimeout(_holdTimer);
+    _holdTimer = null;
+    holdRing.className = '';
+    _holdPointerId = null;
+}
+
+// ═══════════════════════════════════════════════
+//  ACTIVE TOOL RESOLUTION
+// ═══════════════════════════════════════════════
 function activeTool(e) {
-    // Stylus barrel button or right-click → erase
+    // Stylus barrel button → eraser
     if (e.pointerType === 'pen' && (e.button === 5 || e.button === 2 || e.buttons === 32)) return 'eraser';
-    if (ui.tool === 'pan' || e.button === 1 || e.buttons === 4) return 'pan';
-    // Touch with stylus already detected → finger = erase
+    // Middle mouse → pan
+    if (e.button === 1 || e.buttons === 4) return 'pan';
+    // Finger when stylus is active → eraser (palm/finger rejection as erase)
     if (e.pointerType === 'touch' && ui.stylusDetected) return 'eraser';
     return ui.tool;
 }
 
-// ─────────────────────────────────────────────
-//  Pointer events
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  POINTER DOWN
+// ═══════════════════════════════════════════════
 canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
@@ -714,85 +678,107 @@ canvas.addEventListener('pointerdown', e => {
         updateUI();
     }
 
-    // Right-click on canvas → check for image context menu
+    // Right-click → context menu (desktop / stylus barrel)
     if (e.button === 2) {
         const wPos = screenToWorld(sc.x, sc.y);
         const hit  = imageAtWorld(wPos.x, wPos.y);
+        if (hit) showCtxMenu(sc.x, sc.y, hit);
+        else { hideCtxMenu(); draw.selectedImg = null; redraw(); }
+        return;
+    }
+
+    // Touch tracking (pinch detection)
+    if (e.pointerType === 'touch') {
+        draw.touches.set(e.pointerId, sc);
+        if (draw.touches.size >= 2) {
+            cancelHold();
+            draw.isDrawing = false; draw.isErasing = false;
+            draw.current = null; draw.isPanning = true;
+            draw.lastPinch = null; draw.draggingImg = null;
+            return;
+        }
+        // Single touch: start hold detection
+        const wPos = screenToWorld(sc.x, sc.y);
+        startHold(sc, wPos, e.pointerId);
+    }
+
+    const tool  = activeTool(e);
+    const wPos  = screenToWorld(sc.x, sc.y);
+
+    // ── SELECT TOOL: only this tool moves images ──
+    if (tool === 'select') {
+        const hit = imageAtWorld(wPos.x, wPos.y);
         if (hit) {
-            showCtxMenu(sc.x, sc.y, hit);
+            draw.draggingImg = { imgObj: hit, offX: wPos.x - hit.x, offY: wPos.y - hit.y };
+            draw.imgMoved    = false;
+            draw.selectedImg = hit;
+            redraw();
         } else {
-            hideCtxMenu();
             draw.selectedImg = null;
+            // Pan on empty space with select tool
+            draw.isPanning  = true;
+            draw.lastScreen = sc;
             redraw();
         }
         return;
     }
 
-    // Track touch points for pinch
-    if (e.pointerType === 'touch') {
-        draw.touches.set(e.pointerId, sc);
-        if (draw.touches.size >= 2) {
-            draw.isDrawing = false;
-            draw.isErasing = false;
-            draw.current = null;
-            draw.isPanning = true;
-            draw.lastPinch = null;
-            draw.draggingImg = null;
-            return;
-        }
-    }
-
-    const tool = activeTool(e);
-    const wPos = screenToWorld(sc.x, sc.y);
-
-    // Check for image drag (pen tool, pointer on an image)
-    if (tool === 'pen' || tool === 'pan') {
-        const hit = imageAtWorld(wPos.x, wPos.y);
-        if (hit) {
-            draw.draggingImg = { imgObj: hit, offX: wPos.x - hit.x, offY: wPos.y - hit.y };
-            draw.selectedImg = hit;
-            redraw();
-            return;
-        }
-    }
-
-    // Deselect image on canvas click (not on an image)
-    if (draw.selectedImg) { draw.selectedImg = null; redraw(); }
-
+    // ── PEN TOOL: ALWAYS draws, never picks images ──
     if (tool === 'pen') {
-        draw.isDrawing = true;
-        draw.current   = { color: ui.color, thickness: ui.thickness, pts: [wPos] };
-    } else if (tool === 'eraser') {
-        draw.isErasing   = true;
-        draw.lastWorld   = wPos;
-        eraseAt(wPos, wPos);
-    } else if (tool === 'pan') {
-        draw.isPanning   = true;
-        draw.lastScreen  = sc;
+        draw.selectedImg = null;
+        draw.isDrawing   = true;
+        draw.current     = { color: ui.color, thickness: ui.thickness, pts: [wPos] };
+        return;
+    }
+
+    // ── ERASER ──
+    if (tool === 'eraser') {
+        draw.isErasing       = true;
+        draw.erasedSomething = false;
+        draw.lastWorld       = wPos;
+        if (eraseAt(wPos, wPos)) draw.erasedSomething = true;
+        return;
+    }
+
+    // ── PAN ──
+    if (tool === 'pan') {
+        draw.isPanning  = true;
+        draw.lastScreen = sc;
     }
 }, { passive: false });
 
+// ═══════════════════════════════════════════════
+//  POINTER MOVE
+// ═══════════════════════════════════════════════
 canvas.addEventListener('pointermove', e => {
     e.preventDefault();
     const sc = getScreenPos(e);
 
-    // Update touch tracking
+    // Touch tracking for pinch
     if (e.pointerType === 'touch' && draw.touches.has(e.pointerId)) {
         draw.touches.set(e.pointerId, sc);
 
-        if (draw.touches.size === 2) {
-            const pts = Array.from(draw.touches.values());
-            const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-            const mid  = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        // Cancel hold if finger moved too much
+        if (_holdTimer && e.pointerId === _holdPointerId) {
+            const prev = draw.touches.get(e.pointerId);
+            // Check raw movement from original position (sc is already updated above)
+            // We need the previous value - get it before update, but we already updated.
+            // Use a small threshold on coalescedEvents movement instead:
+            cancelHold(); // conservative: any move cancels hold
+        }
 
+        if (draw.touches.size === 2) {
+            const pts  = Array.from(draw.touches.values());
+            const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
+            const mid  = { x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 };
             if (draw.lastPinch) {
-                const ratio  = dist / draw.lastPinch.dist;
-                const wMidX  = draw.lastPinch.mid.x / cam.z + cam.x;
-                const wMidY  = draw.lastPinch.mid.y / cam.z + cam.y;
-                let newZ     = Math.max(0.05, Math.min(cam.z * ratio, 50));
-                cam.z        = newZ;
-                cam.x        = wMidX - mid.x / newZ;
-                cam.y        = wMidY - mid.y / newZ;
+                const ratio = dist / draw.lastPinch.dist;
+                const wMidX = draw.lastPinch.mid.x / cam.z + cam.x;
+                const wMidY = draw.lastPinch.mid.y / cam.z + cam.y;
+                const newZ  = Math.max(0.05, Math.min(cam.z * ratio, 50));
+                cam.z = newZ;
+                cam.x = wMidX - mid.x/newZ;
+                cam.y = wMidY - mid.y/newZ;
             }
             draw.lastPinch = { dist, mid };
             redraw();
@@ -800,14 +786,17 @@ canvas.addEventListener('pointermove', e => {
         }
     }
 
+    // Image drag (select tool)
     if (draw.draggingImg) {
         const wPos = screenToWorld(sc.x, sc.y);
         draw.draggingImg.imgObj.x = wPos.x - draw.draggingImg.offX;
         draw.draggingImg.imgObj.y = wPos.y - draw.draggingImg.offY;
+        draw.imgMoved = true;
         redraw();
         return;
     }
 
+    // Drawing
     if (draw.isDrawing && draw.current) {
         const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
         for (const ev of events) {
@@ -815,12 +804,20 @@ canvas.addEventListener('pointermove', e => {
             draw.current.pts.push(screenToWorld(s2.x, s2.y));
         }
         redraw();
-    } else if (draw.isErasing) {
-        const wCur  = screenToWorld(sc.x, sc.y);
+        return;
+    }
+
+    // Erasing
+    if (draw.isErasing) {
+        const wCur = screenToWorld(sc.x, sc.y);
         const wPrev = draw.lastWorld || wCur;
-        eraseAt(wPrev, wCur);
+        if (eraseAt(wPrev, wCur)) draw.erasedSomething = true;
         draw.lastWorld = wCur;
-    } else if (draw.isPanning && draw.lastScreen && draw.touches.size < 2) {
+        return;
+    }
+
+    // Panning
+    if (draw.isPanning && draw.lastScreen && draw.touches.size < 2) {
         cam.x -= (sc.x - draw.lastScreen.x) / cam.z;
         cam.y -= (sc.y - draw.lastScreen.y) / cam.z;
         draw.lastScreen = sc;
@@ -828,74 +825,98 @@ canvas.addEventListener('pointermove', e => {
     }
 }, { passive: false });
 
+// ═══════════════════════════════════════════════
+//  POINTER UP
+// ═══════════════════════════════════════════════
 function handleUp(e) {
     e.preventDefault();
+
+    const wasFired = _holdFired && e.pointerId === _holdPointerId;
+    cancelHold();
+
     draw.touches.delete(e.pointerId);
     canvas.releasePointerCapture(e.pointerId);
-
     if (draw.touches.size < 2) draw.lastPinch = null;
 
+    // If hold context menu just fired, absorb this up
+    if (wasFired) return;
+
     if (draw.touches.size === 0) {
+        // Commit stroke
         if (draw.isDrawing && draw.current) {
             if (draw.current.pts.length >= 1) {
-                draw.strokes.push(draw.current);
+                board.strokes.push(draw.current);
+                pushHist();
             }
         }
-        draw.isDrawing   = false;
-        draw.isErasing   = false;
-        draw.isPanning   = false;
-        draw.draggingImg = null;
-        draw.current     = null;
-        draw.lastWorld   = null;
-        draw.lastScreen  = null;
+        // Commit erase (only push if something changed)
+        if (draw.isErasing && draw.erasedSomething) {
+            pushHist();
+        }
+        // Commit image move
+        if (draw.draggingImg && draw.imgMoved) {
+            pushHist();
+        }
+
+        draw.isDrawing       = false;
+        draw.isErasing       = false;
+        draw.erasedSomething = false;
+        draw.isPanning       = false;
+        draw.draggingImg     = null;
+        draw.imgMoved        = false;
+        draw.current         = null;
+        draw.lastWorld       = null;
+        draw.lastScreen      = null;
         redraw();
     }
 }
 canvas.addEventListener('pointerup',     handleUp, { passive: false });
 canvas.addEventListener('pointercancel', handleUp, { passive: false });
 
-// Scroll-to-zoom (mouse wheel)
+// ═══════════════════════════════════════════════
+//  WHEEL ZOOM
+// ═══════════════════════════════════════════════
 canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    const sc   = getScreenPos(e);
-    const wX   = sc.x / cam.z + cam.x;
-    const wY   = sc.y / cam.z + cam.y;
-
-    // Ctrl+wheel is pinch-zoom from trackpad → more sensitive
+    const sc = getScreenPos(e);
+    const wX = sc.x/cam.z + cam.x, wY = sc.y/cam.z + cam.y;
     const sens = e.ctrlKey ? 0.004 : 0.002;
-    const newZ = Math.max(0.05, Math.min(cam.z * Math.exp(-e.deltaY * sens), 50));
-
-    cam.z = newZ;
-    cam.x = wX - sc.x / newZ;
-    cam.y = wY - sc.y / newZ;
+    const newZ = Math.max(0.05, Math.min(cam.z * Math.exp(-e.deltaY*sens), 50));
+    cam.z = newZ; cam.x = wX - sc.x/newZ; cam.y = wY - sc.y/newZ;
     redraw();
 }, { passive: false });
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-// Spacebar → temporary pan
+// ═══════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════
 document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && !e.repeat) {
-        canvas.style.cursor = 'grab';
-        draw._prevTool = ui.tool;
-        ui.tool = 'pan';
-        updateUI();
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    // Undo / Redo
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) { e.preventDefault(); redo(); return; }
+
+    // Tools
+    if (!e.ctrlKey && !e.metaKey) {
+        if (e.code === 'Space' && !e.repeat) { draw._prevTool = ui.tool; ui.tool = 'pan'; updateUI(); }
+        if (e.code === 'KeyP') { ui.tool = 'pen';    updateUI(); }
+        if (e.code === 'KeyE') { ui.tool = 'eraser'; updateUI(); }
+        if (e.code === 'KeyS') { ui.tool = 'select'; updateUI(); }
+        if (e.code === 'KeyH') { ui.tool = 'pan';    updateUI(); }
     }
-    if (e.code === 'KeyP') { ui.tool = 'pen';    updateUI(); }
-    if (e.code === 'KeyE') { ui.tool = 'eraser'; updateUI(); }
-    if (e.code === 'KeyH') { ui.tool = 'pan';    updateUI(); }
 });
 document.addEventListener('keyup', e => {
     if (e.code === 'Space' && draw._prevTool) {
-        ui.tool = draw._prevTool;
-        draw._prevTool = null;
-        updateUI();
+        ui.tool = draw._prevTool; draw._prevTool = null; updateUI();
     }
 });
 
-// ─────────────────────────────────────────────
-//  UI wiring
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  UI WIRING
+// ═══════════════════════════════════════════════
 function buildColors() {
     const row = document.getElementById('colors-row');
     row.innerHTML = '';
@@ -910,64 +931,53 @@ function buildColors() {
 }
 
 function updateUI() {
-    // Tool buttons
-    document.getElementById('btn-pen').classList.toggle('active',    ui.tool === 'pen');
-    document.getElementById('btn-eraser').classList.toggle('active', ui.tool === 'eraser');
-    document.getElementById('btn-pan').classList.toggle('active',    ui.tool === 'pan');
-
-    // Color row visible only when pen
+    ['pen','eraser','select','pan'].forEach(t =>
+        document.getElementById('btn-'+t).classList.toggle('active', ui.tool === t)
+    );
     const showColors = ui.tool === 'pen';
     document.getElementById('colors-row').style.display    = showColors ? 'flex'  : 'none';
     document.getElementById('color-divider').style.display = showColors ? 'block' : 'none';
-
-    // Color swatches
-    document.querySelectorAll('.color-swatch').forEach(b => {
-        const isActive = b.style.background === ui.color ||
-                         b.style.backgroundColor === ui.color;
-        b.classList.toggle('active', isActive);
-    });
-
-    // Erase label
+    document.querySelectorAll('.color-swatch').forEach(b =>
+        b.classList.toggle('active',
+            b.style.background === ui.color || b.style.backgroundColor === ui.color)
+    );
     document.getElementById('erase-label').textContent =
         ui.eraseMode === 'stroke' ? 'Whole Stroke' : 'Partial Erase';
 
-    // Cursor
-    if (ui.tool === 'pan') canvas.style.cursor = 'grab';
+    if      (ui.tool === 'pan')    canvas.style.cursor = 'grab';
+    else if (ui.tool === 'select') canvas.style.cursor = 'default';
     else if (ui.tool === 'eraser') canvas.style.cursor = 'cell';
-    else canvas.style.cursor = 'crosshair';
+    else                           canvas.style.cursor = 'crosshair';
 }
 
-// Wire buttons
 document.getElementById('btn-pen').onclick    = () => { ui.tool = 'pen';    updateUI(); };
 document.getElementById('btn-eraser').onclick = () => { ui.tool = 'eraser'; updateUI(); };
+document.getElementById('btn-select').onclick = () => { ui.tool = 'select'; updateUI(); };
 document.getElementById('btn-pan').onclick    = () => { ui.tool = 'pan';    updateUI(); };
+document.getElementById('btn-undo').onclick   = undo;
+document.getElementById('btn-redo').onclick   = redo;
 
-document.getElementById('thickness-slider').oninput = e => {
-    ui.thickness = parseInt(e.target.value);
+document.getElementById('thickness-slider').oninput = e => { ui.thickness = parseInt(e.target.value); };
+document.getElementById('erase-mode-btn').onclick   = () => {
+    ui.eraseMode = ui.eraseMode === 'stroke' ? 'partial' : 'stroke'; updateUI();
 };
 
-document.getElementById('erase-mode-btn').onclick = () => {
-    ui.eraseMode = ui.eraseMode === 'stroke' ? 'partial' : 'stroke';
-    updateUI();
-};
-
-// Clear modal
-document.getElementById('clear-btn').onclick    = () => document.getElementById('modal-overlay').classList.add('visible');
-document.getElementById('cancel-btn').onclick   = () => document.getElementById('modal-overlay').classList.remove('visible');
-document.getElementById('confirm-btn').onclick  = () => {
-    draw.strokes = [];
-    draw.images  = [];
-    draw.current = null;
-    draw.selectedImg = null;
+document.getElementById('clear-btn').onclick   = () => document.getElementById('modal-overlay').classList.add('visible');
+document.getElementById('cancel-btn').onclick  = () => document.getElementById('modal-overlay').classList.remove('visible');
+document.getElementById('confirm-btn').onclick = () => {
+    board.strokes = []; board.images = [];
+    draw.current = null; draw.selectedImg = null;
+    pushHist();
     document.getElementById('modal-overlay').classList.remove('visible');
     redraw();
 };
 
-// ─────────────────────────────────────────────
-//  Init
-// ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
 buildColors();
 updateUI();
+pushHist(); // seed history with empty board
 resize();
 </script>
 </body>
