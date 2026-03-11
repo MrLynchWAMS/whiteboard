@@ -4,493 +4,712 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Infinite Whiteboard</title>
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide for icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #f8fafc; }
-        /* Smooth transitions for UI elements */
-        .ui-transition { transition: all 0.2s ease; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            overflow: hidden;
+            background: #f8fafc;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #canvas {
+            position: absolute;
+            inset: 0;
+            display: block;
+            touch-action: none;
+        }
+
+        /* ---- Toolbar ---- */
+        #toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 8px 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 10;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tool-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 9px;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .tool-btn:hover { background: rgba(0,0,0,0.06); color: #1e293b; }
+        .tool-btn.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+        .tool-btn svg { width: 18px; height: 18px; stroke-width: 2; pointer-events: none; }
+        .tool-btn.active svg { stroke-width: 2.5; }
+
+        .divider {
+            width: 1px;
+            height: 28px;
+            background: #cbd5e1;
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        /* Color swatches */
+        #colors-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+        .color-swatch:hover { transform: scale(1.15); }
+        .color-swatch.active {
+            transform: scale(1.2);
+            border-color: white;
+            box-shadow: 0 0 0 2px #94a3b8;
+        }
+
+        /* Thickness */
+        #thickness-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 4px;
+        }
+        #thickness-wrap svg { color: #94a3b8; flex-shrink: 0; }
+        #thickness-slider {
+            width: 80px;
+            accent-color: #334155;
+            cursor: pointer;
+        }
+
+        /* Erase mode toggle */
+        #erase-mode-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #475569;
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
+        #erase-mode-btn:hover { background: #f1f5f9; }
+        #erase-mode-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        /* Clear btn */
+        #clear-btn {
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #dc2626;
+            transition: background 0.15s, transform 0.15s;
+        }
+        #clear-btn:hover { background: #fef2f2; transform: scale(1.05); }
+        #clear-btn svg { width: 18px; height: 18px; }
+
+        /* Stylus indicator badge */
+        #stylus-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #0f172a;
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: none;
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        /* Zoom indicator */
+        #zoom-indicator {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Modal */
+        #modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        #modal-overlay.visible { display: flex; }
+        #modal-box {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 340px;
+            width: 90%;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+            animation: popIn 0.2s ease;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.92); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+        #modal-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+        #modal-box p  { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 24px; }
+        .modal-btns   { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-btns button {
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s;
+        }
+        #cancel-btn  { background: #f1f5f9; color: #475569; }
+        #cancel-btn:hover  { background: #e2e8f0; }
+        #confirm-btn { background: #dc2626; color: white; }
+        #confirm-btn:hover { background: #b91c1c; }
     </style>
 </head>
-<body class="select-none text-zinc-900">
+<body>
 
-    <div class="relative w-screen h-screen overflow-hidden bg-zinc-50">
-        <!-- Canvas -->
-        <canvas id="canvas" class="absolute inset-0 block w-full h-full touch-none cursor-crosshair" style="touch-action: none;"></canvas>
+<canvas id="canvas"></canvas>
 
-        <!-- Main Floating Toolbar -->
-        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-2 border border-zinc-200 z-10">
-            
-            <!-- Tools -->
-            <div class="flex bg-zinc-100 rounded-xl p-1 gap-1">
-                <button class="tool-btn ui-transition p-2.5 rounded-lg text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50" data-tool="pen" title="Pen">
-                    <i data-lucide="pen" class="w-5 h-5 pointer-events-none"></i>
-                </button>
-                <button class="tool-btn ui-transition p-2.5 rounded-lg text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50" data-tool="eraser" title="Eraser">
-                    <i data-lucide="eraser" class="w-5 h-5 pointer-events-none"></i>
-                </button>
-                <button class="tool-btn ui-transition p-2.5 rounded-lg text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50" data-tool="pan" title="Pan">
-                    <i data-lucide="hand" class="w-5 h-5 pointer-events-none"></i>
-                </button>
-            </div>
+<div id="zoom-indicator">100%</div>
+<div id="stylus-badge">✏️ Stylus Mode</div>
 
-            <div class="w-px h-8 bg-zinc-300 mx-1"></div>
-
-            <!-- Colors (Dynamically injected) -->
-            <div id="colors-wrapper" class="flex items-center">
-                <div id="colors-container" class="flex gap-1 items-center px-1"></div>
-                <div class="w-px h-8 bg-zinc-300 mx-2"></div>
-            </div>
-
-            <!-- Thickness Slider -->
-            <div class="flex items-center gap-2 px-2 text-zinc-500">
-                <i data-lucide="minus" class="w-4 h-4" id="icon-minus-small"></i>
-                <input type="range" id="thickness-slider" min="1" max="40" value="4" class="w-24 accent-zinc-800" title="Stroke Thickness" />
-                <i data-lucide="minus" class="w-5 h-5 stroke-[4px]" id="icon-minus-large"></i>
-            </div>
-
-            <div class="w-px h-8 bg-zinc-300 mx-1"></div>
-
-            <!-- Eraser Settings -->
-            <button id="erase-mode-btn" class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-zinc-700 hover:bg-zinc-100 ui-transition" title="Toggle Erase Mode">
-                <i data-lucide="settings-2" class="w-5 h-5 pointer-events-none"></i>
-                <span id="erase-mode-label">Whole Element</span>
-            </button>
-
-            <div class="w-px h-8 bg-zinc-300 mx-1"></div>
-
-            <!-- Clear All -->
-            <button id="clear-btn" class="p-2.5 rounded-xl text-red-600 hover:bg-red-50 hover:scale-105 ui-transition" title="Clear Board">
-                <i data-lucide="trash-2" class="w-5 h-5 pointer-events-none"></i>
-            </button>
-        </div>
-
-        <!-- Clear All Warning Modal -->
-        <div id="clear-modal" class="hidden absolute inset-0 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-center z-50">
-            <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform transition-transform scale-95 opacity-0" id="clear-modal-content">
-                <div class="flex items-center gap-4 text-red-600 mb-4">
-                    <div class="p-3 bg-red-100 rounded-2xl">
-                        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-zinc-900">Clear Board?</h2>
-                </div>
-                <p class="text-zinc-600 mb-8 leading-relaxed">
-                    This will permanently delete all strokes on the infinite canvas. This action cannot be undone.
-                </p>
-                <div class="flex justify-end gap-3">
-                    <button id="cancel-clear-btn" class="px-5 py-2.5 rounded-xl font-medium text-zinc-700 hover:bg-zinc-100 ui-transition">
-                        Cancel
-                    </button>
-                    <button id="confirm-clear-btn" class="px-5 py-2.5 rounded-xl font-medium bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200 ui-transition">
-                        Yes, Clear All
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- Toolbar -->
+<div id="toolbar">
+    <!-- Tool group -->
+    <div class="tool-group">
+        <button class="tool-btn active" id="btn-pen" title="Pen (P)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-eraser" title="Eraser (E)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6.0001 13.5L10.5 18"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-pan" title="Pan (Space/H)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5a2 2 0 00-2-2 2 2 0 00-2 2v7a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2 2 2 0 00-2 2"/></svg>
+        </button>
     </div>
 
-    <script>
-        // --- Initialize Icons ---
-        lucide.createIcons();
+    <div class="divider"></div>
 
-        // --- Math & Utilities ---
-        function distToSegmentSquared(p, v, w) {
-            const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2;
-            if (l2 === 0) return (p.x - v.x) ** 2 + (p.y - v.y) ** 2;
-            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return (p.x - (v.x + t * (w.x - v.x))) ** 2 + (p.y - (v.y + t * (w.y - v.y))) ** 2;
+    <!-- Colors (hidden when eraser/pan active) -->
+    <div id="colors-row">
+        <!-- injected by JS -->
+    </div>
+    <div class="divider" id="color-divider"></div>
+
+    <!-- Thickness -->
+    <div id="thickness-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.5"/></svg>
+        <input type="range" id="thickness-slider" min="1" max="40" value="4" title="Stroke thickness">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12" stroke-width="4"/></svg>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Erase mode -->
+    <button id="erase-mode-btn" title="Toggle erase mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        <span id="erase-label">Whole Stroke</span>
+    </button>
+
+    <div class="divider"></div>
+
+    <button id="clear-btn" title="Clear all">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+    </button>
+</div>
+
+<!-- Clear Modal -->
+<div id="modal-overlay">
+    <div id="modal-box">
+        <h2>🗑️ Clear Board?</h2>
+        <p>This will permanently erase all strokes on the canvas. This cannot be undone.</p>
+        <div class="modal-btns">
+            <button id="cancel-btn">Cancel</button>
+            <button id="confirm-btn">Yes, Clear All</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  Constants
+// ─────────────────────────────────────────────
+const COLORS = ['#0f172a', '#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#db2777'];
+
+// ─────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────
+const ui = {
+    tool: 'pen',         // 'pen' | 'eraser' | 'pan'
+    eraseMode: 'stroke', // 'stroke' | 'partial'
+    color: COLORS[0],
+    thickness: 4,
+    stylusDetected: false,
+};
+
+const cam = { x: 0, y: 0, z: 1 };
+
+const draw = {
+    strokes: [],          // committed strokes [{color, thickness, pts:[{x,y}]}]
+    current: null,        // stroke being drawn right now
+    isDrawing: false,
+    isErasing: false,
+    isPanning: false,
+    lastWorld: null,      // last world-space pointer pos
+    lastScreen: null,     // last screen-space pointer pos
+    touches: new Map(),   // pointerId → {x,y} (screen)
+    lastPinch: null,      // {dist, mid:{x,y}}
+};
+
+// ─────────────────────────────────────────────
+//  Canvas setup
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d', { alpha: false });
+
+function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    redraw();
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  Coordinate helpers
+// ─────────────────────────────────────────────
+function toWorld(sx, sy) {
+    return { x: sx / cam.z + cam.x, y: sy / cam.y + cam.y };
+}
+// Correct world transform (y uses cam.y not cam.y in denominator)
+function screenToWorld(sx, sy) {
+    return {
+        x: sx / cam.z + cam.x,
+        y: sy / cam.z + cam.y,
+    };
+}
+
+// ─────────────────────────────────────────────
+//  Rendering
+// ─────────────────────────────────────────────
+function redraw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, W, H);
+
+    // subtle dot grid
+    ctx.save();
+    const gs = 32 * cam.z;
+    const ox = (-cam.x * cam.z) % gs;
+    const oy = (-cam.y * cam.z) % gs;
+    ctx.fillStyle = '#cbd5e1';
+    for (let gx = ox; gx < W + gs; gx += gs) {
+        for (let gy = oy; gy < H + gs; gy += gs) {
+            ctx.beginPath();
+            ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
+            ctx.fill();
         }
+    }
+    ctx.restore();
 
-        const COLORS = ['#0f172a', '#dc2626', '#2563eb', '#16a34a', '#eab308'];
+    ctx.save();
+    ctx.scale(cam.z, cam.z);
+    ctx.translate(-cam.x, -cam.y);
 
-        // --- State ---
-        const uiState = {
-            tool: 'pen', // 'pen', 'eraser', 'pan'
-            eraseMode: 'stroke', // 'stroke', 'partial'
-            color: COLORS[0],
-            thickness: 4
-        };
-
-        const canvasState = {
-            strokes: [],
-            currentStroke: null,
-            camera: { x: 0, y: 0, z: 1 },
-            isDrawing: false,
-            isPanning: false,
-            isErasing: false,
-            lastPointerPos: null,
-            activeTouches: new Map(),
-            lastPinch: null,
-            hasStylus: false
-        };
-
-        // --- DOM Elements ---
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { alpha: false });
-        
-        const toolBtns = document.querySelectorAll('.tool-btn');
-        const colorsContainer = document.getElementById('colors-container');
-        const colorsWrapper = document.getElementById('colors-wrapper');
-        const thicknessSlider = document.getElementById('thickness-slider');
-        const eraseModeBtn = document.getElementById('erase-mode-btn');
-        const eraseModeLabel = document.getElementById('erase-mode-label');
-        
-        const clearBtn = document.getElementById('clear-btn');
-        const clearModal = document.getElementById('clear-modal');
-        const clearModalContent = document.getElementById('clear-modal-content');
-        const cancelClearBtn = document.getElementById('cancel-clear-btn');
-        const confirmClearBtn = document.getElementById('confirm-clear-btn');
-
-        // --- UI Initialization & Updates ---
-        function initUI() {
-            // Build Colors
-            COLORS.forEach(c => {
-                const btn = document.createElement('button');
-                btn.className = `color-btn w-6 h-6 rounded-full transition-all hover:scale-110`;
-                btn.style.backgroundColor = c;
-                btn.title = "Color";
-                btn.onclick = () => { uiState.color = c; updateUI(); };
-                colorsContainer.appendChild(btn);
-            });
-
-            // Tool Buttons
-            toolBtns.forEach(btn => {
-                btn.onclick = () => { uiState.tool = btn.dataset.tool; updateUI(); };
-            });
-
-            // Thickness
-            thicknessSlider.oninput = (e) => { uiState.thickness = parseInt(e.target.value); };
-
-            // Erase Mode
-            eraseModeBtn.onclick = () => {
-                uiState.eraseMode = uiState.eraseMode === 'stroke' ? 'partial' : 'stroke';
-                updateUI();
-            };
-
-            // Modal Toggles
-            clearBtn.onclick = () => showModal(true);
-            cancelClearBtn.onclick = () => showModal(false);
-            confirmClearBtn.onclick = () => {
-                canvasState.strokes = [];
-                showModal(false);
-                redraw();
-            };
-
-            updateUI();
+    function drawStroke(s) {
+        if (!s || s.pts.length === 0) return;
+        ctx.beginPath();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth   = s.thickness;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        if (s.pts.length === 1) {
+            // dot
+            ctx.arc(s.pts[0].x, s.pts[0].y, s.thickness / 2, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.fill();
+            return;
         }
-
-        function updateUI() {
-            // Update Tool Buttons styling
-            toolBtns.forEach(btn => {
-                const isActive = btn.dataset.tool === uiState.tool;
-                if (isActive) {
-                    btn.classList.add('bg-white', 'shadow-sm', 'text-zinc-900', 'scale-105');
-                    btn.classList.remove('text-zinc-500', 'hover:bg-zinc-200/50');
-                    // Add thicker icon strokes for active state
-                    btn.querySelector('i').style.strokeWidth = "2.5px";
-                } else {
-                    btn.classList.remove('bg-white', 'shadow-sm', 'text-zinc-900', 'scale-105');
-                    btn.classList.add('text-zinc-500', 'hover:bg-zinc-200/50');
-                    btn.querySelector('i').style.strokeWidth = "2px";
-                }
-            });
-
-            // Show/Hide Colors based on tool
-            colorsWrapper.style.display = uiState.tool === 'pen' ? 'flex' : 'none';
-
-            // Update Color Swatches
-            document.querySelectorAll('.color-btn').forEach(btn => {
-                // Convert inline rgb back to hex to check active (or just check colors)
-                // simpler to just check index or re-assign classes
-                const isActive = btn.style.backgroundColor === hexToRgb(uiState.color);
-                if (isActive) {
-                    btn.classList.add('scale-125', 'ring-2', 'ring-offset-2', 'ring-zinc-400');
-                    btn.classList.remove('hover:scale-110');
-                } else {
-                    btn.classList.remove('scale-125', 'ring-2', 'ring-offset-2', 'ring-zinc-400');
-                    btn.classList.add('hover:scale-110');
-                }
-            });
-
-            // Update Erase Label
-            eraseModeLabel.innerText = uiState.eraseMode === 'stroke' ? 'Whole Element' : 'Partial Erase';
-
-            // Update Canvas Cursor
-            canvas.className = `absolute inset-0 block w-full h-full touch-none ${
-                uiState.tool === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
-            }`;
+        ctx.moveTo(s.pts[0].x, s.pts[0].y);
+        // smooth with quadratic curves
+        for (let i = 1; i < s.pts.length - 1; i++) {
+            const mx = (s.pts[i].x + s.pts[i+1].x) / 2;
+            const my = (s.pts[i].y + s.pts[i+1].y) / 2;
+            ctx.quadraticCurveTo(s.pts[i].x, s.pts[i].y, mx, my);
         }
+        const last = s.pts[s.pts.length - 1];
+        ctx.lineTo(last.x, last.y);
+        ctx.stroke();
+    }
 
-        function hexToRgb(hex) {
-            const bigint = parseInt(hex.slice(1), 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            return `rgb(${r}, ${g}, ${b})`;
-        }
+    draw.strokes.forEach(drawStroke);
+    if (draw.current) drawStroke(draw.current);
 
-        function showModal(show) {
-            if (show) {
-                clearModal.classList.remove('hidden');
-                setTimeout(() => {
-                    clearModalContent.classList.remove('scale-95', 'opacity-0');
-                    clearModalContent.classList.add('scale-100', 'opacity-100');
-                }, 10);
-            } else {
-                clearModalContent.classList.remove('scale-100', 'opacity-100');
-                clearModalContent.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    clearModal.classList.add('hidden');
-                }, 200);
+    ctx.restore();
+
+    // zoom label
+    document.getElementById('zoom-indicator').textContent = Math.round(cam.z * 100) + '%';
+}
+
+// ─────────────────────────────────────────────
+//  Eraser
+// ─────────────────────────────────────────────
+function distPtSegSq(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const l2 = dx*dx + dy*dy;
+    if (l2 === 0) return (p.x-a.x)**2 + (p.y-a.y)**2;
+    const t = Math.max(0, Math.min(1, ((p.x-a.x)*dx + (p.y-a.y)*dy) / l2));
+    return (p.x - (a.x + t*dx))**2 + (p.y - (a.y + t*dy))**2;
+}
+
+function eraseAt(wPrev, wCur) {
+    const R = (Math.max(ui.thickness, 8) * 3) / cam.z;
+    const R2 = R * R;
+    let changed = false;
+
+    if (ui.eraseMode === 'stroke') {
+        const before = draw.strokes.length;
+        draw.strokes = draw.strokes.filter(s => {
+            for (let i = 0; i < s.pts.length; i++) {
+                const pt = s.pts[i];
+                if (distPtSegSq(pt, wPrev, wCur) < R2) return false;
             }
-        }
-
-        // --- Core Rendering & Canvas Logic ---
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            redraw();
-        }
-
-        function redraw() {
-            ctx.fillStyle = '#f8fafc';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.save();
-            ctx.scale(canvasState.camera.z, canvasState.camera.z);
-            ctx.translate(-canvasState.camera.x, -canvasState.camera.y);
-
-            const drawPath = (s) => {
-                if (!s || s.points.length === 0) return;
-                ctx.beginPath();
-                ctx.strokeStyle = s.color;
-                ctx.lineWidth = s.thickness;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                
-                ctx.moveTo(s.points[0].x, s.points[0].y);
-                for (let i = 1; i < s.points.length; i++) {
-                    ctx.lineTo(s.points[i].x, s.points[i].y);
-                }
-                ctx.stroke();
-            };
-
-            canvasState.strokes.forEach(drawPath);
-            if (canvasState.currentStroke) drawPath(canvasState.currentStroke);
-
-            ctx.restore();
-        }
-
-        function performErase(p1, p2) {
-            const R = (uiState.thickness * 4) / canvasState.camera.z; 
-            let modified = false;
-
-            if (uiState.eraseMode === 'stroke') {
-                const initialCount = canvasState.strokes.length;
-                canvasState.strokes = canvasState.strokes.filter(stroke => {
-                    for (let i = 0; i < stroke.points.length; i++) {
-                        if (distToSegmentSquared(stroke.points[i], p1, p2) < R * R) return false; 
-                    }
-                    return true;
-                });
-                if (canvasState.strokes.length !== initialCount) modified = true;
-            } else {
-                const newStrokes = [];
-                for (const stroke of canvasState.strokes) {
-                    let currentSub = [];
-                    let strokeModified = false;
-
-                    for (let i = 0; i < stroke.points.length; i++) {
-                        const pt = stroke.points[i];
-                        if (distToSegmentSquared(pt, p1, p2) < R * R) {
-                            strokeModified = true;
-                            if (currentSub.length > 0) {
-                                newStrokes.push({ ...stroke, points: currentSub });
-                                currentSub = [];
-                            }
-                        } else {
-                            currentSub.push(pt);
-                        }
-                    }
-
-                    if (currentSub.length > 0) {
-                        if (strokeModified) newStrokes.push({ ...stroke, points: currentSub });
-                        else newStrokes.push(stroke);
-                    }
-                    if (strokeModified) modified = true;
-                }
-                canvasState.strokes = newStrokes;
-            }
-            if (modified) redraw();
-        }
-
-        // --- Event Listeners ---
-        window.addEventListener('resize', resize);
-
-        canvas.addEventListener('pointerdown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            if (e.pointerType === 'pen') canvasState.hasStylus = true;
-
-            if (e.pointerType === 'touch') {
-                canvasState.activeTouches.set(e.pointerId, { x, y });
-                if (canvasState.activeTouches.size === 2) {
-                    canvasState.isDrawing = false;
-                    canvasState.isErasing = false;
-                    canvasState.isPanning = true;
-                    canvasState.currentStroke = null;
-                    canvasState.lastPinch = null;
-                    return;
-                }
-            }
-
-            let currentAction = 'none';
-            if (e.pointerType === 'touch' && canvasState.hasStylus && canvasState.activeTouches.size === 1) {
-                currentAction = 'erasing';
-            } else if (uiState.tool === 'pan' || e.button === 1 || (e.pointerType === 'mouse' && e.buttons === 4)) {
-                currentAction = 'panning';
-            } else if (uiState.tool === 'eraser') {
-                currentAction = 'erasing';
-            } else {
-                currentAction = 'drawing';
-            }
-
-            const worldPos = {
-                x: x / canvasState.camera.z + canvasState.camera.x,
-                y: y / canvasState.camera.z + canvasState.camera.y
-            };
-
-            if (currentAction === 'drawing') {
-                canvasState.isDrawing = true;
-                canvasState.currentStroke = { color: uiState.color, thickness: uiState.thickness, points: [worldPos] };
-            } else if (currentAction === 'erasing') {
-                canvasState.isErasing = true;
-                canvasState.lastPointerPos = worldPos;
-                performErase(worldPos, worldPos);
-            } else if (currentAction === 'panning') {
-                canvasState.isPanning = true;
-                canvasState.lastPointerPos = { x, y };
-            }
-            
-            canvas.setPointerCapture(e.pointerId);
+            return true;
         });
-
-        canvas.addEventListener('pointermove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            if (canvasState.activeTouches.has(e.pointerId)) {
-                canvasState.activeTouches.set(e.pointerId, { x, y });
-                if (canvasState.activeTouches.size === 2) {
-                    const touches = Array.from(canvasState.activeTouches.values());
-                    const p1 = touches[0];
-                    const p2 = touches[1];
-                    const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-                    const midpoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-
-                    if (canvasState.lastPinch) {
-                        const ratio = distance / canvasState.lastPinch.distance;
-                        let newZ = canvasState.camera.z * ratio;
-                        newZ = Math.max(0.05, Math.min(newZ, 50));
-
-                        const worldMidX = canvasState.lastPinch.midpoint.x / canvasState.camera.z + canvasState.camera.x;
-                        const worldMidY = canvasState.lastPinch.midpoint.y / canvasState.camera.z + canvasState.camera.y;
-
-                        canvasState.camera.z = newZ;
-                        canvasState.camera.x = worldMidX - midpoint.x / newZ;
-                        canvasState.camera.y = worldMidY - midpoint.y / newZ;
-                    }
-                    canvasState.lastPinch = { distance, midpoint };
-                    redraw();
-                    return;
+        if (draw.strokes.length !== before) changed = true;
+    } else {
+        // partial
+        const next = [];
+        for (const s of draw.strokes) {
+            let seg = [];
+            let mod = false;
+            for (const pt of s.pts) {
+                if (distPtSegSq(pt, wPrev, wCur) < R2) {
+                    mod = true;
+                    if (seg.length > 1) next.push({ ...s, pts: seg });
+                    seg = [];
+                } else {
+                    seg.push(pt);
                 }
             }
-
-            if (canvasState.isDrawing && canvasState.currentStroke) {
-                const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-                for (const ev of events) {
-                    const ex = ev.clientX - rect.left;
-                    const ey = ev.clientY - rect.top;
-                    canvasState.currentStroke.points.push({
-                        x: ex / canvasState.camera.z + canvasState.camera.x,
-                        y: ey / canvasState.camera.z + canvasState.camera.y
-                    });
-                }
-                redraw();
-            } else if (canvasState.isErasing && canvasState.lastPointerPos) {
-                const worldPos = {
-                    x: x / canvasState.camera.z + canvasState.camera.x,
-                    y: y / canvasState.camera.z + canvasState.camera.y
-                };
-                performErase(canvasState.lastPointerPos, worldPos);
-                canvasState.lastPointerPos = worldPos;
-            } else if (canvasState.isPanning && canvasState.lastPointerPos && canvasState.activeTouches.size < 2) {
-                const dx = x - canvasState.lastPointerPos.x;
-                const dy = y - canvasState.lastPointerPos.y;
-                canvasState.camera.x -= dx / canvasState.camera.z;
-                canvasState.camera.y -= dy / canvasState.camera.z;
-                canvasState.lastPointerPos = { x, y };
-                redraw();
+            if (seg.length > 0) {
+                if (mod) { if (seg.length > 1) next.push({ ...s, pts: seg }); }
+                else next.push(s);
             }
-        });
+            if (mod) changed = true;
+        }
+        draw.strokes = next;
+    }
+    if (changed) redraw();
+}
 
-        const handlePointerUp = (e) => {
-            canvasState.activeTouches.delete(e.pointerId);
+// ─────────────────────────────────────────────
+//  Pointer helpers
+// ─────────────────────────────────────────────
+function getScreenPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
 
-            if (canvasState.isDrawing && canvasState.currentStroke) {
-                if (canvasState.currentStroke.points.length > 1) {
-                    canvasState.strokes.push(canvasState.currentStroke);
-                }
+function activeTool(e) {
+    // Stylus barrel button or right-click → erase
+    if (e.pointerType === 'pen' && (e.button === 5 || e.button === 2 || e.buttons === 32)) return 'eraser';
+    if (ui.tool === 'pan' || e.button === 1 || e.buttons === 4) return 'pan';
+    // Touch with stylus already detected → finger = erase
+    if (e.pointerType === 'touch' && ui.stylusDetected) return 'eraser';
+    return ui.tool;
+}
+
+// ─────────────────────────────────────────────
+//  Pointer events
+// ─────────────────────────────────────────────
+canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+
+    const sc = getScreenPos(e);
+
+    if (e.pointerType === 'pen') {
+        ui.stylusDetected = true;
+        document.getElementById('stylus-badge').style.display = 'block';
+        updateUI();
+    }
+
+    // Track touch points for pinch
+    if (e.pointerType === 'touch') {
+        draw.touches.set(e.pointerId, sc);
+        if (draw.touches.size >= 2) {
+            // Start pinch — cancel any drawing
+            draw.isDrawing = false;
+            draw.isErasing = false;
+            draw.current = null;
+            draw.isPanning = true;
+            draw.lastPinch = null;
+            return;
+        }
+    }
+
+    const tool = activeTool(e);
+    const wPos = screenToWorld(sc.x, sc.y);
+
+    if (tool === 'pen') {
+        draw.isDrawing = true;
+        draw.current   = { color: ui.color, thickness: ui.thickness, pts: [wPos] };
+    } else if (tool === 'eraser') {
+        draw.isErasing   = true;
+        draw.lastWorld   = wPos;
+        eraseAt(wPos, wPos);
+    } else if (tool === 'pan') {
+        draw.isPanning   = true;
+        draw.lastScreen  = sc;
+    }
+}, { passive: false });
+
+canvas.addEventListener('pointermove', e => {
+    e.preventDefault();
+    const sc = getScreenPos(e);
+
+    // Update touch tracking
+    if (e.pointerType === 'touch' && draw.touches.has(e.pointerId)) {
+        draw.touches.set(e.pointerId, sc);
+
+        if (draw.touches.size === 2) {
+            const pts = Array.from(draw.touches.values());
+            const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            const mid  = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+
+            if (draw.lastPinch) {
+                const ratio  = dist / draw.lastPinch.dist;
+                const wMidX  = draw.lastPinch.mid.x / cam.z + cam.x;
+                const wMidY  = draw.lastPinch.mid.y / cam.z + cam.y;
+                let newZ     = Math.max(0.05, Math.min(cam.z * ratio, 50));
+                cam.z        = newZ;
+                cam.x        = wMidX - mid.x / newZ;
+                cam.y        = wMidY - mid.y / newZ;
             }
-
-            if (canvasState.activeTouches.size < 2) canvasState.lastPinch = null;
-            if (canvasState.activeTouches.size === 0) {
-                canvasState.isDrawing = false;
-                canvasState.isErasing = false;
-                canvasState.isPanning = false;
-                canvasState.currentStroke = null;
-            }
-            
-            canvas.releasePointerCapture(e.pointerId);
+            draw.lastPinch = { dist, mid };
             redraw();
-        };
+            return;
+        }
+    }
 
-        canvas.addEventListener('pointerup', handlePointerUp);
-        canvas.addEventListener('pointercancel', handlePointerUp);
+    if (draw.isDrawing && draw.current) {
+        const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+        for (const ev of events) {
+            const s2 = getScreenPos(ev);
+            draw.current.pts.push(screenToWorld(s2.x, s2.y));
+        }
+        redraw();
+    } else if (draw.isErasing) {
+        const wCur  = screenToWorld(sc.x, sc.y);
+        const wPrev = draw.lastWorld || wCur;
+        eraseAt(wPrev, wCur);
+        draw.lastWorld = wCur;
+    } else if (draw.isPanning && draw.lastScreen && draw.touches.size < 2) {
+        cam.x -= (sc.x - draw.lastScreen.x) / cam.z;
+        cam.y -= (sc.y - draw.lastScreen.y) / cam.z;
+        draw.lastScreen = sc;
+        redraw();
+    }
+}, { passive: false });
 
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const zoomSensitivity = 0.002;
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
+function handleUp(e) {
+    e.preventDefault();
+    draw.touches.delete(e.pointerId);
+    canvas.releasePointerCapture(e.pointerId);
 
-            const worldX = mouseX / canvasState.camera.z + canvasState.camera.x;
-            const worldY = mouseY / canvasState.camera.z + canvasState.camera.y;
+    if (draw.touches.size < 2) draw.lastPinch = null;
 
-            const delta = e.ctrlKey ? -e.deltaY * zoomSensitivity * 2 : -e.deltaY * zoomSensitivity;
-            
-            let newZ = canvasState.camera.z * Math.exp(delta);
-            newZ = Math.max(0.05, Math.min(newZ, 50));
+    if (draw.touches.size === 0) {
+        if (draw.isDrawing && draw.current) {
+            if (draw.current.pts.length >= 1) {
+                draw.strokes.push(draw.current);
+            }
+        }
+        draw.isDrawing  = false;
+        draw.isErasing  = false;
+        draw.isPanning  = false;
+        draw.current    = null;
+        draw.lastWorld  = null;
+        draw.lastScreen = null;
+        redraw();
+    }
+}
+canvas.addEventListener('pointerup',     handleUp, { passive: false });
+canvas.addEventListener('pointercancel', handleUp, { passive: false });
 
-            canvasState.camera.z = newZ;
-            canvasState.camera.x = worldX - mouseX / newZ;
-            canvasState.camera.y = worldY - mouseY / newZ;
+// Scroll-to-zoom (mouse wheel)
+canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const sc   = getScreenPos(e);
+    const wX   = sc.x / cam.z + cam.x;
+    const wY   = sc.y / cam.z + cam.y;
 
-            redraw();
-        }, { passive: false });
+    // Ctrl+wheel is pinch-zoom from trackpad → more sensitive
+    const sens = e.ctrlKey ? 0.004 : 0.002;
+    const newZ = Math.max(0.05, Math.min(cam.z * Math.exp(-e.deltaY * sens), 50));
 
-        canvas.addEventListener('contextmenu', e => e.preventDefault());
+    cam.z = newZ;
+    cam.x = wX - sc.x / newZ;
+    cam.y = wY - sc.y / newZ;
+    redraw();
+}, { passive: false });
 
-        // Run startup logic
-        initUI();
-        resize();
-    </script>
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// Spacebar → temporary pan
+document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !e.repeat) {
+        canvas.style.cursor = 'grab';
+        draw._prevTool = ui.tool;
+        ui.tool = 'pan';
+        updateUI();
+    }
+    if (e.code === 'KeyP') { ui.tool = 'pen';    updateUI(); }
+    if (e.code === 'KeyE') { ui.tool = 'eraser'; updateUI(); }
+    if (e.code === 'KeyH') { ui.tool = 'pan';    updateUI(); }
+});
+document.addEventListener('keyup', e => {
+    if (e.code === 'Space' && draw._prevTool) {
+        ui.tool = draw._prevTool;
+        draw._prevTool = null;
+        updateUI();
+    }
+});
+
+// ─────────────────────────────────────────────
+//  UI wiring
+// ─────────────────────────────────────────────
+function buildColors() {
+    const row = document.getElementById('colors-row');
+    row.innerHTML = '';
+    COLORS.forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'color-swatch' + (c === ui.color ? ' active' : '');
+        b.style.background = c;
+        b.title = c;
+        b.onclick = () => { ui.color = c; updateUI(); };
+        row.appendChild(b);
+    });
+}
+
+function updateUI() {
+    // Tool buttons
+    document.getElementById('btn-pen').classList.toggle('active',    ui.tool === 'pen');
+    document.getElementById('btn-eraser').classList.toggle('active', ui.tool === 'eraser');
+    document.getElementById('btn-pan').classList.toggle('active',    ui.tool === 'pan');
+
+    // Color row visible only when pen
+    const showColors = ui.tool === 'pen';
+    document.getElementById('colors-row').style.display    = showColors ? 'flex'  : 'none';
+    document.getElementById('color-divider').style.display = showColors ? 'block' : 'none';
+
+    // Color swatches
+    document.querySelectorAll('.color-swatch').forEach(b => {
+        const isActive = b.style.background === ui.color ||
+                         b.style.backgroundColor === ui.color;
+        b.classList.toggle('active', isActive);
+    });
+
+    // Erase label
+    document.getElementById('erase-label').textContent =
+        ui.eraseMode === 'stroke' ? 'Whole Stroke' : 'Partial Erase';
+
+    // Cursor
+    if (ui.tool === 'pan') canvas.style.cursor = 'grab';
+    else if (ui.tool === 'eraser') canvas.style.cursor = 'cell';
+    else canvas.style.cursor = 'crosshair';
+}
+
+// Wire buttons
+document.getElementById('btn-pen').onclick    = () => { ui.tool = 'pen';    updateUI(); };
+document.getElementById('btn-eraser').onclick = () => { ui.tool = 'eraser'; updateUI(); };
+document.getElementById('btn-pan').onclick    = () => { ui.tool = 'pan';    updateUI(); };
+
+document.getElementById('thickness-slider').oninput = e => {
+    ui.thickness = parseInt(e.target.value);
+};
+
+document.getElementById('erase-mode-btn').onclick = () => {
+    ui.eraseMode = ui.eraseMode === 'stroke' ? 'partial' : 'stroke';
+    updateUI();
+};
+
+// Clear modal
+document.getElementById('clear-btn').onclick    = () => document.getElementById('modal-overlay').classList.add('visible');
+document.getElementById('cancel-btn').onclick   = () => document.getElementById('modal-overlay').classList.remove('visible');
+document.getElementById('confirm-btn').onclick  = () => {
+    draw.strokes = [];
+    draw.current = null;
+    document.getElementById('modal-overlay').classList.remove('visible');
+    redraw();
+};
+
+// ─────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────
+buildColors();
+updateUI();
+resize();
+</script>
 </body>
 </html>
