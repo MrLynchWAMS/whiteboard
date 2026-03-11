@@ -17,7 +17,7 @@
 
         #canvas { position: absolute; inset: 0; display: block; touch-action: none; }
 
-        /* ── Toolbar ── */
+        /* ── Toolbar: single row, no wrap ── */
         #toolbar {
             position: absolute;
             bottom: 20px;
@@ -25,43 +25,44 @@
             transform: translateX(-50%);
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.95);
+            gap: 4px;
+            flex-wrap: nowrap;          /* NEVER wrap */
+            white-space: nowrap;
+            background: rgba(255,255,255,0.96);
             backdrop-filter: blur(12px);
             border: 1px solid #e2e8f0;
             border-radius: 18px;
-            padding: 8px 12px;
+            padding: 7px 10px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
             z-index: 10;
-            flex-wrap: wrap;
-            max-width: calc(100vw - 24px);
         }
 
         .tool-group {
-            display: flex; align-items: center; gap: 4px;
-            background: #f1f5f9; border-radius: 12px; padding: 4px;
+            display: flex; align-items: center; gap: 3px;
+            background: #f1f5f9; border-radius: 12px; padding: 3px;
+            flex-shrink: 0;
         }
 
         .tool-btn {
-            width: 38px; height: 38px;
-            border: none; border-radius: 9px;
+            width: 34px; height: 34px;
+            border: none; border-radius: 8px;
             background: transparent; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             color: #64748b; transition: all 0.15s ease; flex-shrink: 0;
         }
         .tool-btn:hover { background: rgba(0,0,0,0.06); color: #1e293b; }
         .tool-btn.active { background: white; color: #0f172a; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
-        .tool-btn svg { width: 18px; height: 18px; stroke-width: 2; pointer-events: none; }
+        .tool-btn svg { width: 16px; height: 16px; stroke-width: 2; pointer-events: none; }
         .tool-btn.active svg { stroke-width: 2.5; }
-        .tool-btn:disabled { opacity: 0.3; cursor: default; }
+        .tool-btn:disabled { opacity: 0.28; cursor: default; }
         .tool-btn:disabled:hover { background: transparent; color: #64748b; }
 
-        .divider { width: 1px; height: 28px; background: #cbd5e1; margin: 0 4px; flex-shrink: 0; }
+        .divider { width: 1px; height: 24px; background: #cbd5e1; margin: 0 3px; flex-shrink: 0; }
 
         /* Colors */
-        #colors-row { display: flex; align-items: center; gap: 5px; }
+        #colors-row { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
         .color-swatch {
-            width: 22px; height: 22px; border-radius: 50%;
+            width: 20px; height: 20px; border-radius: 50%;
             border: 2px solid transparent; cursor: pointer;
             transition: transform 0.15s, border-color 0.15s; flex-shrink: 0;
         }
@@ -69,34 +70,46 @@
         .color-swatch.active { transform: scale(1.2); border-color: white; box-shadow: 0 0 0 2px #94a3b8; }
 
         /* Thickness */
-        #thickness-wrap { display: flex; align-items: center; gap: 6px; padding: 0 4px; }
+        #thickness-wrap { display: flex; align-items: center; gap: 5px; padding: 0 3px; flex-shrink: 0; }
         #thickness-wrap svg { color: #94a3b8; flex-shrink: 0; }
-        #thickness-slider { width: 80px; accent-color: #334155; cursor: pointer; }
+        #thickness-slider { width: 72px; accent-color: #334155; cursor: pointer; flex-shrink: 0; }
 
-        /* Erase mode */
+        /* Erase mode — icon only to save space */
         #erase-mode-btn {
-            display: flex; align-items: center; gap: 6px;
-            padding: 6px 10px; border: none; border-radius: 10px;
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            border: none; border-radius: 8px;
             background: transparent; cursor: pointer;
-            font-size: 12px; font-weight: 500; color: #475569;
-            white-space: nowrap; transition: background 0.15s;
+            color: #475569; transition: background 0.15s; flex-shrink: 0;
+            position: relative;
         }
         #erase-mode-btn:hover { background: #f1f5f9; }
-        #erase-mode-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+        #erase-mode-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+        /* small dot indicator: filled = partial, empty = whole */
+        #erase-mode-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 5px; right: 5px;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transition: background 0.15s;
+        }
+        #erase-mode-btn.partial::after { background: #0f172a; }
 
         /* Clear btn */
         #clear-btn {
-            width: 38px; height: 38px; border: none; border-radius: 10px;
+            width: 34px; height: 34px; border: none; border-radius: 8px;
             background: transparent; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            color: #dc2626; transition: background 0.15s, transform 0.15s;
+            color: #dc2626; transition: background 0.15s, transform 0.15s; flex-shrink: 0;
         }
         #clear-btn:hover { background: #fef2f2; transform: scale(1.05); }
-        #clear-btn svg { width: 18px; height: 18px; }
+        #clear-btn svg { width: 16px; height: 16px; }
 
         /* Stylus badge */
         #stylus-badge {
-            position: absolute; top: 16px; right: 16px;
+            position: absolute; top: 14px; right: 14px;
             background: #0f172a; color: white;
             font-size: 11px; font-weight: 600;
             padding: 4px 10px; border-radius: 20px;
@@ -105,10 +118,21 @@
 
         /* Zoom */
         #zoom-indicator {
-            position: absolute; top: 16px; left: 16px;
+            position: absolute; top: 14px; left: 14px;
             background: rgba(255,255,255,0.9); border: 1px solid #e2e8f0;
             color: #475569; font-size: 12px; font-weight: 600;
             padding: 4px 10px; border-radius: 20px; z-index: 10; pointer-events: none;
+        }
+
+        /* Tooltip on erase mode btn */
+        #erase-mode-btn[title]:hover::before {
+            content: attr(title);
+            position: absolute;
+            bottom: 110%; left: 50%; transform: translateX(-50%);
+            background: #0f172a; color: white;
+            font-size: 11px; white-space: nowrap;
+            padding: 4px 8px; border-radius: 6px;
+            pointer-events: none; z-index: 100;
         }
 
         /* Modal */
@@ -135,7 +159,7 @@
 
         /* Toast */
         #toast {
-            position: absolute; bottom: 90px; left: 50%;
+            position: absolute; bottom: 84px; left: 50%;
             transform: translateX(-50%) translateY(10px);
             background: #0f172a; color: white;
             font-size: 12px; font-weight: 500;
@@ -157,11 +181,7 @@
             opacity: 0;
             transition: transform 0.65s ease-out, opacity 0.1s;
         }
-        #hold-ring.active {
-            display: block;
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.9;
-        }
+        #hold-ring.active { display: block; transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
 
         /* Context menu */
         #img-ctx-menu {
@@ -183,6 +203,15 @@
         #img-ctx-menu button.danger { color: #dc2626; }
         #img-ctx-menu button.danger:hover { background: #fef2f2; }
         #img-ctx-menu .menu-sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
+
+        /* Lasso selection rubber-band (drawn on canvas, but we show a DOM overlay for feel) */
+        #lasso-overlay {
+            position: absolute; pointer-events: none; z-index: 5;
+            border: 1.5px dashed #2563eb;
+            background: rgba(37,99,235,0.06);
+            border-radius: 2px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -192,31 +221,33 @@
 <div id="stylus-badge">✏️ Stylus Mode</div>
 <div id="toast"></div>
 <div id="hold-ring"></div>
+<div id="lasso-overlay"></div>
 
-<!-- Image context menu -->
+<!-- Image / selection context menu -->
 <div id="img-ctx-menu">
     <button id="ctx-lock">🔒 Lock image</button>
     <button id="ctx-unlock">🔓 Unlock image</button>
-    <div class="menu-sep"></div>
+    <div class="menu-sep" id="ctx-sep-lock"></div>
     <button id="ctx-front">⬆️ Bring to front</button>
     <button id="ctx-back">⬇️ Send to back</button>
-    <div class="menu-sep"></div>
-    <button id="ctx-delete" class="danger">🗑 Delete image</button>
+    <div class="menu-sep" id="ctx-sep-layer"></div>
+    <button id="ctx-delete" class="danger">🗑 Delete</button>
 </div>
 
 <!-- Toolbar -->
 <div id="toolbar">
+    <!-- Drawing tools -->
     <div class="tool-group">
-        <button class="tool-btn active" id="btn-pen" title="Pen — draws on top of everything (P)">
+        <button class="tool-btn active" id="btn-pen" title="Pen (P)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
         </button>
-        <button class="tool-btn" id="btn-eraser" title="Eraser — erases strokes (and unlocked images) (E)">
+        <button class="tool-btn" id="btn-eraser" title="Eraser (E)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6 13.5L10.5 18"/></svg>
         </button>
-        <button class="tool-btn" id="btn-select" title="Select — move / right-click images (S)">
+        <button class="tool-btn" id="btn-select" title="Select — click or drag to select strokes &amp; images (S)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3l14 9-7 2-4 7z"/></svg>
         </button>
-        <button class="tool-btn" id="btn-pan" title="Pan — scroll canvas (H or Space)">
+        <button class="tool-btn" id="btn-pan" title="Pan (H / Space)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2"/><path d="M14 10V4a2 2 0 00-2-2 2 2 0 00-2 2v2"/><path d="M10 10.5a2 2 0 00-2-2 2 2 0 00-2 2v7a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2 2 2 0 00-2 2"/></svg>
         </button>
     </div>
@@ -235,20 +266,22 @@
 
     <div class="divider"></div>
 
+    <!-- Colors (only shown for pen tool) -->
     <div id="colors-row"></div>
-    <div class="divider" id="color-divider"></div>
+    <div class="divider" id="color-divider" style="display:none"></div>
 
+    <!-- Thickness -->
     <div id="thickness-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14"><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13"><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.5"/></svg>
         <input type="range" id="thickness-slider" min="1" max="40" value="4" title="Stroke thickness">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12" stroke-width="4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="17" height="17"><line x1="5" y1="12" x2="19" y2="12" stroke-width="4"/></svg>
     </div>
 
     <div class="divider"></div>
 
-    <button id="erase-mode-btn" title="Toggle erase mode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-        <span id="erase-label">Whole Stroke</span>
+    <!-- Erase mode toggle (icon only, dot indicator shows mode) -->
+    <button id="erase-mode-btn" title="Whole Stroke erase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 20H7L3 16l10-10 7 7-3.5 3.5"/><path d="M6 13.5L10.5 18"/></svg>
     </button>
 
     <div class="divider"></div>
@@ -262,7 +295,7 @@
 <div id="modal-overlay">
     <div id="modal-box">
         <h2>🗑️ Clear Board?</h2>
-        <p>This will permanently erase all strokes and pasted images on the canvas. This action cannot be undone.</p>
+        <p>This will permanently erase all strokes and images. This action cannot be undone.</p>
         <div class="modal-btns">
             <button id="cancel-btn">Cancel</button>
             <button id="confirm-btn">Yes, Clear All</button>
@@ -290,7 +323,7 @@ function showToast(msg, ms = 2600) {
 }
 
 // ═══════════════════════════════════════════════
-//  STATE
+//  UI STATE
 // ═══════════════════════════════════════════════
 const ui = {
     tool: 'pen',         // 'pen' | 'eraser' | 'select' | 'pan'
@@ -302,13 +335,15 @@ const ui = {
 
 const cam = { x: 0, y: 0, z: 1 };
 
-// Board = undoable content
+// ═══════════════════════════════════════════════
+//  BOARD (undoable content)
+// ═══════════════════════════════════════════════
 const board = {
     strokes: [],  // [{color, thickness, pts:[{x,y}]}]
     images:  [],  // [{id, img, x, y, w, h, locked}]
 };
 
-// ── History ──
+// ── History ──────────────────────────────────
 const hist = { stack: [], idx: -1 };
 
 function snapBoard() {
@@ -317,7 +352,6 @@ function snapBoard() {
         images:  board.images.map(im => ({ ...im })),
     };
 }
-
 function pushHist() {
     hist.stack.splice(hist.idx + 1);
     hist.stack.push(snapBoard());
@@ -325,65 +359,69 @@ function pushHist() {
     hist.idx = hist.stack.length - 1;
     updateUndoBtns();
 }
-
 function applySnap(snap) {
     board.strokes = snap.strokes.map(s => ({ ...s, pts: s.pts.slice() }));
     board.images  = snap.images.map(im => ({ ...im }));
-    draw.selectedImg = null;
+    sel.clear();
     redraw();
 }
-
-function undo() {
-    if (hist.idx <= 0) return;
-    hist.idx--;
-    applySnap(hist.stack[hist.idx]);
-    updateUndoBtns();
-}
-
-function redo() {
-    if (hist.idx >= hist.stack.length - 1) return;
-    hist.idx++;
-    applySnap(hist.stack[hist.idx]);
-    updateUndoBtns();
-}
-
+function undo() { if (hist.idx > 0)  { hist.idx--; applySnap(hist.stack[hist.idx]); updateUndoBtns(); } }
+function redo() { if (hist.idx < hist.stack.length-1) { hist.idx++; applySnap(hist.stack[hist.idx]); updateUndoBtns(); } }
 function updateUndoBtns() {
     document.getElementById('btn-undo').disabled = hist.idx <= 0;
     document.getElementById('btn-redo').disabled = hist.idx >= hist.stack.length - 1;
 }
 
-// ── Live interaction state (not snapshotted mid-gesture) ──
-const draw = {
-    current:      null,   // stroke being drawn
-    isDrawing:    false,
-    isErasing:    false,
-    erasedSomething: false,
-    isPanning:    false,
-    lastWorld:    null,
-    lastScreen:   null,
-    touches:      new Map(),
-    lastPinch:    null,
-    selectedImg:  null,
-    draggingImg:  null,   // {imgObj, offX, offY} — select tool only
-    imgMoved:     false,  // did we actually move the image this drag?
-    _prevTool:    null,
+// ═══════════════════════════════════════════════
+//  SELECTION STATE
+// ═══════════════════════════════════════════════
+// sel holds whichever strokes and images are currently selected.
+// Images are referenced by id; strokes by index (rebuilt after any mutation).
+const sel = {
+    strokes: new Set(),   // Set of stroke objects
+    images:  new Set(),   // Set of image objects
+    clear() { this.strokes.clear(); this.images.clear(); },
+    get hasAny() { return this.strokes.size > 0 || this.images.size > 0; },
+    get singleImage() {
+        if (this.strokes.size === 0 && this.images.size === 1) return [...this.images][0];
+        return null;
+    },
 };
 
 // ═══════════════════════════════════════════════
-//  CANVAS SETUP
+//  LIVE INTERACTION STATE
+// ═══════════════════════════════════════════════
+const draw = {
+    current:         null,
+    isDrawing:       false,
+    isErasing:       false,
+    erasedSomething: false,
+    isPanning:       false,
+    isDraggingSel:   false,  // dragging selected objects
+    isLassoing:      false,  // rubber-band selection drag
+    lassoStart:      null,   // world coords {x,y}
+    lassoEnd:        null,   // world coords {x,y}
+    dragOff:         null,   // {dx,dy} world offset between pointer and selection anchor
+    selMoved:        false,
+    lastWorld:       null,
+    lastScreen:      null,
+    touches:         new Map(),
+    lastPinch:       null,
+    _prevTool:       null,
+};
+
+// ═══════════════════════════════════════════════
+//  CANVAS / RESIZE
 // ═══════════════════════════════════════════════
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d', { alpha: false });
-
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; redraw(); }
 window.addEventListener('resize', resize);
 
 // ═══════════════════════════════════════════════
-//  COORDINATES
+//  COORDS
 // ═══════════════════════════════════════════════
-function screenToWorld(sx, sy) {
-    return { x: sx / cam.z + cam.x, y: sy / cam.z + cam.y };
-}
+function screenToWorld(sx, sy) { return { x: sx/cam.z + cam.x, y: sy/cam.z + cam.y }; }
 function getScreenPos(e) {
     const r = canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -414,19 +452,15 @@ function redraw() {
     // Images (below strokes)
     for (const im of board.images) {
         ctx.drawImage(im.img, im.x, im.y, im.w, im.h);
-
-        // lock badge in corner
-        const sz = Math.max(10, 14 / cam.z);
+        const sz = Math.max(10, 14/cam.z);
         if (im.locked) {
             ctx.font = `${sz}px sans-serif`;
-            ctx.fillText('🔒', im.x + im.w - sz * 1.5, im.y + sz * 1.3);
+            ctx.fillText('🔒', im.x + im.w - sz*1.5, im.y + sz*1.3);
         }
-
-        // selection outline
-        if (im === draw.selectedImg) {
+        if (sel.images.has(im)) {
             ctx.save();
             ctx.strokeStyle = '#2563eb';
-            ctx.lineWidth = 2 / cam.z;
+            ctx.lineWidth = 2/cam.z;
             ctx.setLineDash([6/cam.z, 3/cam.z]);
             ctx.strokeRect(im.x - 3/cam.z, im.y - 3/cam.z, im.w + 6/cam.z, im.h + 6/cam.z);
             ctx.restore();
@@ -434,38 +468,53 @@ function redraw() {
     }
 
     // Strokes
-    function drawStroke(s) {
+    function drawStroke(s, highlight) {
         if (!s || s.pts.length === 0) return;
         ctx.beginPath();
-        ctx.strokeStyle = s.color;
-        ctx.lineWidth   = s.thickness;
+        ctx.strokeStyle = highlight ? '#2563eb' : s.color;
+        ctx.lineWidth   = s.thickness + (highlight ? 2/cam.z : 0);
         ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         if (s.pts.length === 1) {
-            ctx.fillStyle = s.color;
+            ctx.fillStyle = highlight ? '#2563eb' : s.color;
             ctx.arc(s.pts[0].x, s.pts[0].y, s.thickness/2, 0, Math.PI*2);
             ctx.fill();
             return;
         }
         ctx.moveTo(s.pts[0].x, s.pts[0].y);
         for (let i = 1; i < s.pts.length - 1; i++) {
-            const mx = (s.pts[i].x + s.pts[i+1].x) / 2;
-            const my = (s.pts[i].y + s.pts[i+1].y) / 2;
+            const mx = (s.pts[i].x + s.pts[i+1].x)/2;
+            const my = (s.pts[i].y + s.pts[i+1].y)/2;
             ctx.quadraticCurveTo(s.pts[i].x, s.pts[i].y, mx, my);
         }
-        const last = s.pts[s.pts.length-1];
-        ctx.lineTo(last.x, last.y);
+        ctx.lineTo(s.pts[s.pts.length-1].x, s.pts[s.pts.length-1].y);
         ctx.stroke();
     }
 
-    board.strokes.forEach(drawStroke);
-    if (draw.current) drawStroke(draw.current);
+    board.strokes.forEach(s => drawStroke(s, sel.strokes.has(s)));
+    if (draw.current) drawStroke(draw.current, false);
+
+    // Lasso rectangle
+    if (draw.isLassoing && draw.lassoStart && draw.lassoEnd) {
+        const lx = Math.min(draw.lassoStart.x, draw.lassoEnd.x);
+        const ly = Math.min(draw.lassoStart.y, draw.lassoEnd.y);
+        const lw = Math.abs(draw.lassoEnd.x - draw.lassoStart.x);
+        const lh = Math.abs(draw.lassoEnd.y - draw.lassoStart.y);
+        ctx.save();
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 1.5/cam.z;
+        ctx.setLineDash([5/cam.z, 3/cam.z]);
+        ctx.strokeRect(lx, ly, lw, lh);
+        ctx.fillStyle = 'rgba(37,99,235,0.06)';
+        ctx.fillRect(lx, ly, lw, lh);
+        ctx.restore();
+    }
 
     ctx.restore();
     document.getElementById('zoom-indicator').textContent = Math.round(cam.z * 100) + '%';
 }
 
 // ═══════════════════════════════════════════════
-//  ERASER
+//  ERASER  (strokes only — images handled separately in pointer handler)
 // ═══════════════════════════════════════════════
 function distPtSegSq(p, a, b) {
     const dx = b.x-a.x, dy = b.y-a.y, l2 = dx*dx+dy*dy;
@@ -474,10 +523,35 @@ function distPtSegSq(p, a, b) {
     return (p.x-(a.x+t*dx))**2+(p.y-(a.y+t*dy))**2;
 }
 
+// Returns true if the eraser circle (center on segment wPrev→wCur, radius R) overlaps a rect
+function circleOverlapsRect(wPrev, wCur, R, rx, ry, rw, rh) {
+    // Check if any corner or edge of the rect is within R of the segment
+    const corners = [
+        {x: rx,    y: ry},
+        {x: rx+rw, y: ry},
+        {x: rx,    y: ry+rh},
+        {x: rx+rw, y: ry+rh},
+    ];
+    // Also check center
+    corners.push({x: rx+rw/2, y: ry+rh/2});
+    for (const c of corners) {
+        if (distPtSegSq(c, wPrev, wCur) < R*R) return true;
+    }
+    // Check if segment passes through rect
+    // Simple AABB check against the segment endpoints
+    const pts = [wPrev, wCur];
+    for (const p of pts) {
+        if (p.x >= rx-R && p.x <= rx+rw+R && p.y >= ry-R && p.y <= ry+rh+R) return true;
+    }
+    return false;
+}
+
 function eraseAt(wPrev, wCur) {
-    const R2 = ((Math.max(ui.thickness, 8) * 3) / cam.z) ** 2;
+    const R  = (Math.max(ui.thickness, 8) * 3) / cam.z;
+    const R2 = R * R;
     let changed = false;
 
+    // ── Erase strokes ──
     if (ui.eraseMode === 'stroke') {
         const before = board.strokes.length;
         board.strokes = board.strokes.filter(s => {
@@ -504,25 +578,81 @@ function eraseAt(wPrev, wCur) {
         }
         board.strokes = next;
     }
+
+    // ── Erase unlocked images ──
+    const beforeImgCount = board.images.length;
+    board.images = board.images.filter(im => {
+        if (im.locked) return true; // skip locked
+        // Remove image if eraser overlaps it
+        return !circleOverlapsRect(wPrev, wCur, R, im.x, im.y, im.w, im.h);
+    });
+    if (board.images.length !== beforeImgCount) changed = true;
+
     if (changed) { redraw(); return true; }
     return false;
 }
 
 // ═══════════════════════════════════════════════
-//  IMAGE HELPERS
+//  SELECTION HELPERS
 // ═══════════════════════════════════════════════
-// Returns topmost image at world position.
-// When erasing: skip locked images.
-// When selecting: return topmost regardless.
-function imageAtWorld(wx, wy, { forErase = false } = {}) {
-    for (let i = board.images.length - 1; i >= 0; i--) {
+function imageAtWorld(wx, wy) {
+    for (let i = board.images.length-1; i >= 0; i--) {
         const im = board.images[i];
-        if (forErase && im.locked) continue;
         if (wx >= im.x && wx <= im.x+im.w && wy >= im.y && wy <= im.y+im.h) return im;
     }
     return null;
 }
 
+function strokeHitTest(s, wx, wy) {
+    const R2 = (Math.max(s.thickness, 8) * 1.5 / cam.z) ** 2;
+    if (s.pts.length === 1) {
+        return ((s.pts[0].x-wx)**2 + (s.pts[0].y-wy)**2) < R2;
+    }
+    for (let i = 0; i < s.pts.length-1; i++) {
+        if (distPtSegSq({x:wx,y:wy}, s.pts[i], s.pts[i+1]) < R2) return true;
+    }
+    return false;
+}
+
+// Select everything inside a world-space rectangle
+function selectInRect(x1, y1, x2, y2) {
+    const lx = Math.min(x1,x2), rx = Math.max(x1,x2);
+    const ly = Math.min(y1,y2), ry = Math.max(y1,y2);
+    sel.clear();
+    for (const s of board.strokes) {
+        for (const pt of s.pts) {
+            if (pt.x >= lx && pt.x <= rx && pt.y >= ly && pt.y <= ry) {
+                sel.strokes.add(s); break;
+            }
+        }
+    }
+    for (const im of board.images) {
+        // Select if image center is inside rect
+        const cx = im.x + im.w/2, cy = im.y + im.h/2;
+        if (cx >= lx && cx <= rx && cy >= ly && cy <= ry) sel.images.add(im);
+    }
+}
+
+function deleteSelected() {
+    if (!sel.hasAny) return;
+    board.strokes = board.strokes.filter(s => !sel.strokes.has(s));
+    board.images  = board.images.filter(im => !sel.images.has(im));
+    sel.clear();
+    pushHist();
+    redraw();
+}
+
+// Move all selected objects by (dx, dy) in world space
+function moveSelected(dx, dy) {
+    for (const s of sel.strokes) {
+        for (const pt of s.pts) { pt.x += dx; pt.y += dy; }
+    }
+    for (const im of sel.images) { im.x += dx; im.y += dy; }
+}
+
+// ═══════════════════════════════════════════════
+//  IMAGE PASTE
+// ═══════════════════════════════════════════════
 function addImageToCanvas(imgEl) {
     const maxW = canvas.width  * 0.6 / cam.z;
     const maxH = canvas.height * 0.6 / cam.z;
@@ -533,10 +663,10 @@ function addImageToCanvas(imgEl) {
     const cy = cam.y + canvas.height / (2*cam.z);
     const imgObj = { id: Date.now()+Math.random(), img: imgEl, x: cx-w/2, y: cy-h/2, w, h, locked: false };
     board.images.push(imgObj);
-    draw.selectedImg = imgObj;
+    sel.clear(); sel.images.add(imgObj);
     pushHist();
     redraw();
-    showToast('📎 Image pasted — use Select tool (S) to move; right-click or hold to lock/unlock');
+    showToast('📎 Image pasted — Select tool (S) to move; right-click/hold to lock');
 }
 
 document.addEventListener('paste', e => {
@@ -560,11 +690,17 @@ document.addEventListener('paste', e => {
 const ctxMenu = document.getElementById('img-ctx-menu');
 
 function showCtxMenu(sx, sy, imgObj) {
-    draw.selectedImg = imgObj;
-    document.getElementById('ctx-lock').style.display   = imgObj.locked ? 'none' : 'flex';
-    document.getElementById('ctx-unlock').style.display = imgObj.locked ? 'flex' : 'none';
+    sel.clear(); sel.images.add(imgObj);
+    // Show/hide image-specific items
+    const isImage = !!imgObj;
+    document.getElementById('ctx-lock').style.display   = (isImage && !imgObj.locked) ? 'flex' : 'none';
+    document.getElementById('ctx-unlock').style.display = (isImage && imgObj.locked)  ? 'flex' : 'none';
+    document.getElementById('ctx-sep-lock').style.display  = isImage ? 'block' : 'none';
+    document.getElementById('ctx-front').style.display     = isImage ? 'flex'  : 'none';
+    document.getElementById('ctx-back').style.display      = isImage ? 'flex'  : 'none';
+    document.getElementById('ctx-sep-layer').style.display = isImage ? 'block' : 'none';
+
     ctxMenu.style.display = 'flex';
-    // Force layout so offsetWidth is accurate
     const mw = ctxMenu.offsetWidth || 165;
     const mh = ctxMenu.offsetHeight || 180;
     ctxMenu.style.left = Math.min(sx, window.innerWidth  - mw - 8) + 'px';
@@ -574,91 +710,59 @@ function showCtxMenu(sx, sy, imgObj) {
 function hideCtxMenu() { ctxMenu.style.display = 'none'; }
 
 document.getElementById('ctx-lock').onclick = () => {
-    if (draw.selectedImg) {
-        draw.selectedImg.locked = true;
-        pushHist(); redraw();
-        showToast('🔒 Locked — eraser will skip this image');
-    }
+    const im = sel.singleImage;
+    if (im) { im.locked = true; pushHist(); redraw(); showToast('🔒 Locked — eraser skips this image'); }
     hideCtxMenu();
 };
 document.getElementById('ctx-unlock').onclick = () => {
-    if (draw.selectedImg) {
-        draw.selectedImg.locked = false;
-        pushHist(); redraw();
-        showToast('🔓 Unlocked — eraser can erase over this image');
-    }
+    const im = sel.singleImage;
+    if (im) { im.locked = false; pushHist(); redraw(); showToast('🔓 Unlocked — eraser can remove this image'); }
     hideCtxMenu();
 };
 document.getElementById('ctx-front').onclick = () => {
-    if (draw.selectedImg) {
-        board.images = board.images.filter(i => i !== draw.selectedImg);
-        board.images.push(draw.selectedImg);
-        pushHist(); redraw();
-    }
+    const im = sel.singleImage;
+    if (im) { board.images = board.images.filter(i => i !== im); board.images.push(im); pushHist(); redraw(); }
     hideCtxMenu();
 };
 document.getElementById('ctx-back').onclick = () => {
-    if (draw.selectedImg) {
-        board.images = board.images.filter(i => i !== draw.selectedImg);
-        board.images.unshift(draw.selectedImg);
-        pushHist(); redraw();
-    }
+    const im = sel.singleImage;
+    if (im) { board.images = board.images.filter(i => i !== im); board.images.unshift(im); pushHist(); redraw(); }
     hideCtxMenu();
 };
-document.getElementById('ctx-delete').onclick = () => {
-    if (draw.selectedImg) {
-        board.images = board.images.filter(i => i !== draw.selectedImg);
-        draw.selectedImg = null;
-        pushHist(); redraw();
-    }
-    hideCtxMenu();
-};
+document.getElementById('ctx-delete').onclick = () => { deleteSelected(); hideCtxMenu(); };
 
-// Close on outside tap/click
 document.addEventListener('pointerdown', e => {
     if (!ctxMenu.contains(e.target)) hideCtxMenu();
 }, true);
 
 // ═══════════════════════════════════════════════
-//  PRESS-AND-HOLD (touch context menu)
+//  PRESS-AND-HOLD
 // ═══════════════════════════════════════════════
 const holdRing = document.getElementById('hold-ring');
-let _holdTimer   = null;
-let _holdFired   = false;
-let _holdPointerId = null;
+let _holdTimer = null, _holdFired = false, _holdPointerId = null;
 
 function startHold(sc, wPos, pointerId) {
     cancelHold();
-    _holdFired = false;
-    _holdPointerId = pointerId;
-    holdRing.style.left = sc.x + 'px';
-    holdRing.style.top  = sc.y + 'px';
-    // Trigger CSS transition by toggling class after a tick
+    _holdFired = false; _holdPointerId = pointerId;
+    holdRing.style.left = sc.x + 'px'; holdRing.style.top = sc.y + 'px';
     requestAnimationFrame(() => { holdRing.className = 'active'; });
     _holdTimer = setTimeout(() => {
-        _holdFired = true;
-        holdRing.className = '';
+        _holdFired = true; holdRing.className = '';
         const hit = imageAtWorld(wPos.x, wPos.y);
         if (hit) showCtxMenu(sc.x, sc.y, hit);
     }, 650);
 }
-
 function cancelHold() {
-    clearTimeout(_holdTimer);
-    _holdTimer = null;
-    holdRing.className = '';
-    _holdPointerId = null;
+    clearTimeout(_holdTimer); _holdTimer = null;
+    holdRing.className = ''; _holdPointerId = null;
 }
 
 // ═══════════════════════════════════════════════
-//  ACTIVE TOOL RESOLUTION
+//  TOOL RESOLUTION
 // ═══════════════════════════════════════════════
 function activeTool(e) {
-    // Stylus barrel button → eraser
     if (e.pointerType === 'pen' && (e.button === 5 || e.button === 2 || e.buttons === 32)) return 'eraser';
-    // Middle mouse → pan
     if (e.button === 1 || e.buttons === 4) return 'pan';
-    // Finger when stylus is active → eraser (palm/finger rejection as erase)
     if (e.pointerType === 'touch' && ui.stylusDetected) return 'eraser';
     return ui.tool;
 }
@@ -669,7 +773,6 @@ function activeTool(e) {
 canvas.addEventListener('pointerdown', e => {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
-
     const sc = getScreenPos(e);
 
     if (e.pointerType === 'pen') {
@@ -678,26 +781,25 @@ canvas.addEventListener('pointerdown', e => {
         updateUI();
     }
 
-    // Right-click → context menu (desktop / stylus barrel)
+    // Right-click → context menu
     if (e.button === 2) {
         const wPos = screenToWorld(sc.x, sc.y);
-        const hit  = imageAtWorld(wPos.x, wPos.y);
+        const hit = imageAtWorld(wPos.x, wPos.y);
         if (hit) showCtxMenu(sc.x, sc.y, hit);
-        else { hideCtxMenu(); draw.selectedImg = null; redraw(); }
+        else { hideCtxMenu(); sel.clear(); redraw(); }
         return;
     }
 
-    // Touch tracking (pinch detection)
+    // Touch: track for pinch, start hold detection
     if (e.pointerType === 'touch') {
         draw.touches.set(e.pointerId, sc);
         if (draw.touches.size >= 2) {
             cancelHold();
-            draw.isDrawing = false; draw.isErasing = false;
-            draw.current = null; draw.isPanning = true;
-            draw.lastPinch = null; draw.draggingImg = null;
+            draw.isDrawing = false; draw.isErasing = false; draw.isLassoing = false;
+            draw.current = null; draw.isPanning = true; draw.lastPinch = null;
+            draw.isDraggingSel = false;
             return;
         }
-        // Single touch: start hold detection
         const wPos = screenToWorld(sc.x, sc.y);
         startHold(sc, wPos, e.pointerId);
     }
@@ -705,44 +807,79 @@ canvas.addEventListener('pointerdown', e => {
     const tool  = activeTool(e);
     const wPos  = screenToWorld(sc.x, sc.y);
 
-    // ── SELECT TOOL: only this tool moves images ──
-    if (tool === 'select') {
-        const hit = imageAtWorld(wPos.x, wPos.y);
-        if (hit) {
-            draw.draggingImg = { imgObj: hit, offX: wPos.x - hit.x, offY: wPos.y - hit.y };
-            draw.imgMoved    = false;
-            draw.selectedImg = hit;
-            redraw();
-        } else {
-            draw.selectedImg = null;
-            // Pan on empty space with select tool
-            draw.isPanning  = true;
-            draw.lastScreen = sc;
-            redraw();
-        }
-        return;
-    }
-
-    // ── PEN TOOL: ALWAYS draws, never picks images ──
+    // ── PEN: always draws ──
     if (tool === 'pen') {
-        draw.selectedImg = null;
-        draw.isDrawing   = true;
-        draw.current     = { color: ui.color, thickness: ui.thickness, pts: [wPos] };
+        sel.clear(); redraw();
+        draw.isDrawing = true;
+        draw.current   = { color: ui.color, thickness: ui.thickness, pts: [wPos] };
         return;
     }
 
     // ── ERASER ──
     if (tool === 'eraser') {
-        draw.isErasing       = true;
-        draw.erasedSomething = false;
-        draw.lastWorld       = wPos;
+        sel.clear(); redraw();
+        draw.isErasing = true; draw.erasedSomething = false;
+        draw.lastWorld = wPos;
         if (eraseAt(wPos, wPos)) draw.erasedSomething = true;
+        return;
+    }
+
+    // ── SELECT ──
+    if (tool === 'select') {
+        // Did we click on a selected object? → start drag
+        const hitImg = imageAtWorld(wPos.x, wPos.y);
+        if (hitImg && sel.images.has(hitImg)) {
+            draw.isDraggingSel = true;
+            draw.dragOff = { x: wPos.x, y: wPos.y };
+            draw.selMoved = false;
+            return;
+        }
+        // Did we click on any stroke in selection?
+        let hitSelStroke = false;
+        for (const s of sel.strokes) {
+            if (strokeHitTest(s, wPos.x, wPos.y)) { hitSelStroke = true; break; }
+        }
+        if (hitSelStroke) {
+            draw.isDraggingSel = true;
+            draw.dragOff = { x: wPos.x, y: wPos.y };
+            draw.selMoved = false;
+            return;
+        }
+
+        // Click on unselected image → select it
+        if (hitImg) {
+            sel.clear(); sel.images.add(hitImg);
+            draw.isDraggingSel = true;
+            draw.dragOff = { x: wPos.x, y: wPos.y };
+            draw.selMoved = false;
+            redraw();
+            return;
+        }
+
+        // Click on unselected stroke → select it
+        for (let i = board.strokes.length-1; i >= 0; i--) {
+            if (strokeHitTest(board.strokes[i], wPos.x, wPos.y)) {
+                sel.clear(); sel.strokes.add(board.strokes[i]);
+                draw.isDraggingSel = true;
+                draw.dragOff = { x: wPos.x, y: wPos.y };
+                draw.selMoved = false;
+                redraw();
+                return;
+            }
+        }
+
+        // Clicked empty space → start lasso
+        sel.clear();
+        draw.isLassoing = true;
+        draw.lassoStart = wPos;
+        draw.lassoEnd   = wPos;
+        redraw();
         return;
     }
 
     // ── PAN ──
     if (tool === 'pan') {
-        draw.isPanning  = true;
+        draw.isPanning = true;
         draw.lastScreen = sc;
     }
 }, { passive: false });
@@ -754,46 +891,44 @@ canvas.addEventListener('pointermove', e => {
     e.preventDefault();
     const sc = getScreenPos(e);
 
-    // Touch tracking for pinch
+    // Touch tracking / pinch
     if (e.pointerType === 'touch' && draw.touches.has(e.pointerId)) {
         draw.touches.set(e.pointerId, sc);
-
-        // Cancel hold if finger moved too much
-        if (_holdTimer && e.pointerId === _holdPointerId) {
-            const prev = draw.touches.get(e.pointerId);
-            // Check raw movement from original position (sc is already updated above)
-            // We need the previous value - get it before update, but we already updated.
-            // Use a small threshold on coalescedEvents movement instead:
-            cancelHold(); // conservative: any move cancels hold
-        }
+        if (_holdTimer && e.pointerId === _holdPointerId) cancelHold(); // any move = cancel hold
 
         if (draw.touches.size === 2) {
             const pts  = Array.from(draw.touches.values());
             const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
             const mid  = { x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 };
             if (draw.lastPinch) {
-                const ratio = dist / draw.lastPinch.dist;
-                const wMidX = draw.lastPinch.mid.x / cam.z + cam.x;
-                const wMidY = draw.lastPinch.mid.y / cam.z + cam.y;
-                const newZ  = Math.max(0.05, Math.min(cam.z * ratio, 50));
-                cam.z = newZ;
-                cam.x = wMidX - mid.x/newZ;
-                cam.y = wMidY - mid.y/newZ;
+                const ratio = dist/draw.lastPinch.dist;
+                const wMidX = draw.lastPinch.mid.x/cam.z + cam.x;
+                const wMidY = draw.lastPinch.mid.y/cam.z + cam.y;
+                const newZ  = Math.max(0.05, Math.min(cam.z*ratio, 50));
+                cam.z = newZ; cam.x = wMidX - mid.x/newZ; cam.y = wMidY - mid.y/newZ;
             }
             draw.lastPinch = { dist, mid };
-            redraw();
-            return;
+            redraw(); return;
         }
     }
 
-    // Image drag (select tool)
-    if (draw.draggingImg) {
-        const wPos = screenToWorld(sc.x, sc.y);
-        draw.draggingImg.imgObj.x = wPos.x - draw.draggingImg.offX;
-        draw.draggingImg.imgObj.y = wPos.y - draw.draggingImg.offY;
-        draw.imgMoved = true;
-        redraw();
-        return;
+    const wPos = screenToWorld(sc.x, sc.y);
+
+    // Drag selection
+    if (draw.isDraggingSel && draw.dragOff) {
+        const dx = wPos.x - draw.dragOff.x;
+        const dy = wPos.y - draw.dragOff.y;
+        moveSelected(dx, dy);
+        draw.dragOff = wPos;
+        draw.selMoved = true;
+        redraw(); return;
+    }
+
+    // Lasso
+    if (draw.isLassoing) {
+        draw.lassoEnd = wPos;
+        selectInRect(draw.lassoStart.x, draw.lassoStart.y, draw.lassoEnd.x, draw.lassoEnd.y);
+        redraw(); return;
     }
 
     // Drawing
@@ -803,23 +938,20 @@ canvas.addEventListener('pointermove', e => {
             const s2 = getScreenPos(ev);
             draw.current.pts.push(screenToWorld(s2.x, s2.y));
         }
-        redraw();
-        return;
+        redraw(); return;
     }
 
     // Erasing
     if (draw.isErasing) {
-        const wCur = screenToWorld(sc.x, sc.y);
-        const wPrev = draw.lastWorld || wCur;
-        if (eraseAt(wPrev, wCur)) draw.erasedSomething = true;
-        draw.lastWorld = wCur;
-        return;
+        const wPrev = draw.lastWorld || wPos;
+        if (eraseAt(wPrev, wPos)) draw.erasedSomething = true;
+        draw.lastWorld = wPos; return;
     }
 
     // Panning
     if (draw.isPanning && draw.lastScreen && draw.touches.size < 2) {
-        cam.x -= (sc.x - draw.lastScreen.x) / cam.z;
-        cam.y -= (sc.y - draw.lastScreen.y) / cam.z;
+        cam.x -= (sc.x - draw.lastScreen.x)/cam.z;
+        cam.y -= (sc.y - draw.lastScreen.y)/cam.z;
         draw.lastScreen = sc;
         redraw();
     }
@@ -830,40 +962,32 @@ canvas.addEventListener('pointermove', e => {
 // ═══════════════════════════════════════════════
 function handleUp(e) {
     e.preventDefault();
-
     const wasFired = _holdFired && e.pointerId === _holdPointerId;
     cancelHold();
-
     draw.touches.delete(e.pointerId);
     canvas.releasePointerCapture(e.pointerId);
     if (draw.touches.size < 2) draw.lastPinch = null;
-
-    // If hold context menu just fired, absorb this up
     if (wasFired) return;
 
     if (draw.touches.size === 0) {
-        // Commit stroke
-        if (draw.isDrawing && draw.current) {
-            if (draw.current.pts.length >= 1) {
-                board.strokes.push(draw.current);
-                pushHist();
-            }
+        if (draw.isDrawing && draw.current && draw.current.pts.length >= 1) {
+            board.strokes.push(draw.current); pushHist();
         }
-        // Commit erase (only push if something changed)
-        if (draw.isErasing && draw.erasedSomething) {
-            pushHist();
-        }
-        // Commit image move
-        if (draw.draggingImg && draw.imgMoved) {
-            pushHist();
+        if (draw.isErasing && draw.erasedSomething) pushHist();
+        if (draw.isDraggingSel && draw.selMoved) pushHist();
+        if (draw.isLassoing) {
+            // finalize lasso selection (already done in move)
+            draw.isLassoing  = false;
+            draw.lassoStart  = null;
+            draw.lassoEnd    = null;
         }
 
         draw.isDrawing       = false;
         draw.isErasing       = false;
         draw.erasedSomething = false;
         draw.isPanning       = false;
-        draw.draggingImg     = null;
-        draw.imgMoved        = false;
+        draw.isDraggingSel   = false;
+        draw.selMoved        = false;
         draw.current         = null;
         draw.lastWorld       = null;
         draw.lastScreen      = null;
@@ -889,29 +1013,31 @@ canvas.addEventListener('wheel', e => {
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
 // ═══════════════════════════════════════════════
-//  KEYBOARD SHORTCUTS
+//  KEYBOARD
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown', e => {
     const tag = document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
     // Undo / Redo
-    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); undo(); return; }
-    if ((e.ctrlKey || e.metaKey) && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) { e.preventDefault(); redo(); return; }
+    if ((e.ctrlKey||e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if ((e.ctrlKey||e.metaKey) && (e.code==='KeyY' || (e.code==='KeyZ'&&e.shiftKey))) { e.preventDefault(); redo(); return; }
 
-    // Tools
+    // Delete / Backspace → delete selection
+    if ((e.code === 'Delete' || e.code === 'Backspace') && sel.hasAny) {
+        e.preventDefault(); deleteSelected(); return;
+    }
+
     if (!e.ctrlKey && !e.metaKey) {
-        if (e.code === 'Space' && !e.repeat) { draw._prevTool = ui.tool; ui.tool = 'pan'; updateUI(); }
-        if (e.code === 'KeyP') { ui.tool = 'pen';    updateUI(); }
-        if (e.code === 'KeyE') { ui.tool = 'eraser'; updateUI(); }
-        if (e.code === 'KeyS') { ui.tool = 'select'; updateUI(); }
-        if (e.code === 'KeyH') { ui.tool = 'pan';    updateUI(); }
+        if (e.code==='Space' && !e.repeat) { draw._prevTool=ui.tool; ui.tool='pan'; updateUI(); }
+        if (e.code==='KeyP') { ui.tool='pen';    updateUI(); }
+        if (e.code==='KeyE') { ui.tool='eraser'; updateUI(); }
+        if (e.code==='KeyS') { ui.tool='select'; updateUI(); }
+        if (e.code==='KeyH') { ui.tool='pan';    updateUI(); }
     }
 });
 document.addEventListener('keyup', e => {
-    if (e.code === 'Space' && draw._prevTool) {
-        ui.tool = draw._prevTool; draw._prevTool = null; updateUI();
-    }
+    if (e.code==='Space' && draw._prevTool) { ui.tool=draw._prevTool; draw._prevTool=null; updateUI(); }
 });
 
 // ═══════════════════════════════════════════════
@@ -922,9 +1048,8 @@ function buildColors() {
     row.innerHTML = '';
     COLORS.forEach(c => {
         const b = document.createElement('button');
-        b.className = 'color-swatch' + (c === ui.color ? ' active' : '');
-        b.style.background = c;
-        b.title = c;
+        b.className = 'color-swatch' + (c===ui.color ? ' active' : '');
+        b.style.background = c; b.title = c;
         b.onclick = () => { ui.color = c; updateUI(); };
         row.appendChild(b);
     });
@@ -932,41 +1057,41 @@ function buildColors() {
 
 function updateUI() {
     ['pen','eraser','select','pan'].forEach(t =>
-        document.getElementById('btn-'+t).classList.toggle('active', ui.tool === t)
+        document.getElementById('btn-'+t).classList.toggle('active', ui.tool===t)
     );
     const showColors = ui.tool === 'pen';
     document.getElementById('colors-row').style.display    = showColors ? 'flex'  : 'none';
     document.getElementById('color-divider').style.display = showColors ? 'block' : 'none';
     document.querySelectorAll('.color-swatch').forEach(b =>
-        b.classList.toggle('active',
-            b.style.background === ui.color || b.style.backgroundColor === ui.color)
+        b.classList.toggle('active', b.style.background===ui.color || b.style.backgroundColor===ui.color)
     );
-    document.getElementById('erase-label').textContent =
-        ui.eraseMode === 'stroke' ? 'Whole Stroke' : 'Partial Erase';
+    // Erase mode button state
+    const emb = document.getElementById('erase-mode-btn');
+    emb.classList.toggle('partial', ui.eraseMode === 'partial');
+    emb.title = ui.eraseMode === 'stroke' ? 'Erase: Whole Stroke (click to switch)' : 'Erase: Partial (click to switch)';
 
-    if      (ui.tool === 'pan')    canvas.style.cursor = 'grab';
-    else if (ui.tool === 'select') canvas.style.cursor = 'default';
-    else if (ui.tool === 'eraser') canvas.style.cursor = 'cell';
-    else                           canvas.style.cursor = 'crosshair';
+    if      (ui.tool==='pan')    canvas.style.cursor = 'grab';
+    else if (ui.tool==='select') canvas.style.cursor = 'default';
+    else if (ui.tool==='eraser') canvas.style.cursor = 'cell';
+    else                         canvas.style.cursor = 'crosshair';
 }
 
-document.getElementById('btn-pen').onclick    = () => { ui.tool = 'pen';    updateUI(); };
-document.getElementById('btn-eraser').onclick = () => { ui.tool = 'eraser'; updateUI(); };
-document.getElementById('btn-select').onclick = () => { ui.tool = 'select'; updateUI(); };
-document.getElementById('btn-pan').onclick    = () => { ui.tool = 'pan';    updateUI(); };
+document.getElementById('btn-pen').onclick    = () => { ui.tool='pen';    updateUI(); };
+document.getElementById('btn-eraser').onclick = () => { ui.tool='eraser'; updateUI(); };
+document.getElementById('btn-select').onclick = () => { ui.tool='select'; updateUI(); };
+document.getElementById('btn-pan').onclick    = () => { ui.tool='pan';    updateUI(); };
 document.getElementById('btn-undo').onclick   = undo;
 document.getElementById('btn-redo').onclick   = redo;
 
 document.getElementById('thickness-slider').oninput = e => { ui.thickness = parseInt(e.target.value); };
 document.getElementById('erase-mode-btn').onclick   = () => {
-    ui.eraseMode = ui.eraseMode === 'stroke' ? 'partial' : 'stroke'; updateUI();
+    ui.eraseMode = ui.eraseMode==='stroke' ? 'partial' : 'stroke'; updateUI();
 };
 
 document.getElementById('clear-btn').onclick   = () => document.getElementById('modal-overlay').classList.add('visible');
 document.getElementById('cancel-btn').onclick  = () => document.getElementById('modal-overlay').classList.remove('visible');
 document.getElementById('confirm-btn').onclick = () => {
-    board.strokes = []; board.images = [];
-    draw.current = null; draw.selectedImg = null;
+    board.strokes=[]; board.images=[]; sel.clear();
     pushHist();
     document.getElementById('modal-overlay').classList.remove('visible');
     redraw();
@@ -977,7 +1102,7 @@ document.getElementById('confirm-btn').onclick = () => {
 // ═══════════════════════════════════════════════
 buildColors();
 updateUI();
-pushHist(); // seed history with empty board
+pushHist();
 resize();
 </script>
 </body>
